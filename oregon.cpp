@@ -145,6 +145,8 @@ data [2  ] packet type 0   : power + total power
 data [3..4] power : 2 byte watt
 data [5..8] total power : 4 byte watt /s 
 
+intel
+
 */
 /**
  * \brief    power instantanÃ© en watt
@@ -153,10 +155,11 @@ data [5..8] total power : 4 byte watt /s
  */
 int getPower(byte* data )
 {
-  T_INT tint ;
-  tint.Car[0] = data[3] ;
-  tint.Car[1] = data[4] ;
-  return tint.Int  ;
+  int power;
+  power = data[4];
+  power <<= 8;
+  power += data[3];
+  return power;
    
 }
 
@@ -165,14 +168,18 @@ int getPower(byte* data )
  * \param    data       Oregon message
  * \param    totalpower     
  */
-long getTotalPower(byte* data)
+unsigned int getTotalPower(byte* data)
 {
-  T_LONG tint  ;
-  tint.Car[0] = data[5];
-  tint.Car[1] = data[6];
-  tint.Car[2] = data[7];
-  tint.Car[3] = data[8];
-  return tint.Long ;
+  unsigned int power  ;
+  power = (unsigned int)data[8];
+  power &= 0x000000FF;
+  power *= 256;
+  power += data[7];
+  power *= 256;
+  power += data[6];
+  power *= 256;
+  power += data[5];
+  return power ;
 }
 
 byte getPowerPacketType(byte* data)

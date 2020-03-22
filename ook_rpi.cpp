@@ -7,6 +7,8 @@ C code : test.cpp
 * ===================================================
 */
 
+#define OTIO_ENABLE
+
 #include <stdlib.h>
 #include <string>
 #include <stdio.h>
@@ -30,6 +32,12 @@ byte data[4];
 #define MAXS 4096
 int pulse[MAXS];
 int 	NbPulse;
+
+#ifdef OTIO_ENABLE        
+#include "decodeotio.h"
+DecodeOTIO Otio(3);
+#endif
+
 
 void PulseLed()
 {
@@ -69,6 +77,9 @@ int ook_rpi_read_drv( int gpio)
 			for (int i = 0; i < count; i++)
 			{
 				word p = pulse[i];
+				//get pinData
+				int pinData = p & 1;
+
 				if (orscV2.nextPulse(p))
 				{
 					// -1 : on retire le byte de postambule
@@ -96,6 +107,18 @@ int ook_rpi_read_drv( int gpio)
 
 
 			}
+
+#ifdef OTIO_ENABLE        
+				if (Otio.nextPulse(p, pinData)) {
+#ifndef DOMOTIC
+					Otio.ReportSerial();
+#else
+					reportDomoticTemp(Otio.getTemperature(), Otio.getId(), 0, Otio.getBatteryLevel());
+#endif
+					PulseLed();
+				}
+#endif      	
+
 		}
 		}
 		usleep(10000l);
@@ -124,15 +147,16 @@ int main()
 //   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
 
 
+int millis()
+{
+	return 0;
+}
+
 #ifdef WIN32
 
 int usleep(int)
 {
 	return 0;
 
-}
-int millis()
-{
-	return 0;
 }
 #endif

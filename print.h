@@ -17,7 +17,7 @@ class Print
 {
   public:
   
-	static int PRINT (long mes , int base , bool lf)
+	static int PRINT (unsigned long mes , int base , bool lf)
 	{
 			switch (base) {
 					case BIN : printf("%d",mes) ;

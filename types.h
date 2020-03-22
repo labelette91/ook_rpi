@@ -5,12 +5,12 @@
 
 typedef union T_int {
 char Car[2] ;
-int  Int;
+word  Int;
 }T_INT;
 
 typedef union T_long {
 char Car[4] ;
-long Long ;
+int Long ;
 }T_LONG;
 
 typedef union T_double {

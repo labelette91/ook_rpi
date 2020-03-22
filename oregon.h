@@ -20,7 +20,7 @@ extern word getSensor (const byte* data);
 #define CMR180_ID1 0x80
 
 byte getPowerPacketType(byte *data);
-long getTotalPower(byte *data);
+unsigned int getTotalPower(byte *data);
 int  getPower(byte *data);
 
 #define getSensorByte0(data)(data[0])
