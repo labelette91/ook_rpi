@@ -155,6 +155,7 @@
   <ItemGroup>
     <ClCompile Include="ook_rpi.cpp" />
     <ClCompile Include="Oregon.cpp" />
+    <ClCompile Include="virtualserial.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
