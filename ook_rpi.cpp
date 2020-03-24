@@ -48,8 +48,21 @@ DecodeOTIO Otio(3);
 #endif
 
 
-void PulseLed()
+int pin = 0;
+void PulseLed(int Level)
 {
+	if (Level == 2)
+		pin = !pin;
+	else
+		pin = Level;
+	//pulse led1=power
+	//pulse led0=red 
+	//echo gpio | sudo tee /sys/class/leds/led1/trigger
+
+	if (pin)
+		system("echo 1 | sudo tee /sys/class/leds/led1/brightness");
+	else
+		system("echo 0 | sudo tee /sys/class/leds/led1/brightness");
 
 }
 
@@ -71,6 +84,8 @@ int ook_rpi_read_drv( int gpio)
 	std::string Device;
 	std::string serial;
 
+	//power led sur gpio
+	system("echo gpio | sudo tee /sys/class/leds/led1/trigger");
 
 	Device = DeviceR + "17";
 	printf("opening %s\n", Device.c_str() );
@@ -106,7 +121,7 @@ int ook_rpi_read_drv( int gpio)
 					{
 						if ((data[3] != orscV2.data[3]) || (data[0] != orscV2.data[0]) || (data[1] != orscV2.data[1]) || (data[2] != orscV2.data[2]))
 						{
-							PulseLed();
+							PulseLed(2);
 							reportSerial("OSV2", orscV2);
 							data[0] = orscV2.data[0];
 							data[1] = orscV2.data[1];
@@ -135,12 +150,93 @@ int ook_rpi_read_drv( int gpio)
 #ifdef DOMOTIC
 					reportDomoticTemp(Otio.getTemperature(), Otio.getId(), 0, Otio.getBatteryLevel());
 #endif
-					PulseLed();
+					PulseLed(2);
 				}
 #endif      	
 
 		}
 		}
+
+
+		//read serial input & fill receive buffe(
+		DomoticReceive();
+
+		//check domotic send command reception
+		//attente une secone max pour emetre si emission en cours -80--> -70
+		//pas de reception en cours
+		if ((DomoticPacketReceived)
+//			&& (radio.canSend(-70))
+//			&& (Otio.total_bits == 0)
+//			&& (orscV2.total_bits == 0)
+//			&& (Rubicson.total_bits == 0)
+//		  && (HEasy.total_bits == 0)
+//		  && (MD230.total_bits == 0)
+			)
+		{
+			PulseLed( 1);
+
+			//start receive cmd
+			if ((Cmd.ICMND.packettype == 0) && (Cmd.ICMND.cmnd == cmdStartRec)) {
+				DomoticStartReceive();
+			}
+			else if ((Cmd.ICMND.packettype == 0) && (Cmd.ICMND.cmnd == cmdSTATUS)) {
+				DomoticStatus();
+			}
+			else
+			{
+/*
+				rssi = radio.readRSSI();
+
+				detachInterrupt(1);
+				easy.initPin();
+				radio.setMode(RF69_MODE_TX);
+				delay(10);
+
+				if (Cmd.LIGHTING2.packettype == pTypeLighting2)
+				{  //
+					if (Cmd.LIGHTING2.subtype == sTypeHEU) 	         //if home easy protocol : subtype==1
+					{
+						easy.setSwitch(Cmd.LIGHTING2.cmnd, getLightingId(), Cmd.LIGHTING2.unitcode);    // turn on device 0
+						Cmd.LIGHTING2.subtype = 1;
+					}
+					else if (Cmd.LIGHTING2.subtype == sTypeAC) 	         //if hager protocol : subtype==0
+					{
+						ManageHager(Cmd.LIGHTING2.id4, Cmd.LIGHTING2.unitcode, Cmd.LIGHTING2.cmnd);
+						Cmd.LIGHTING2.subtype = 0;
+					}
+					else
+						Cmd.LIGHTING2.subtype = 2;
+
+				}
+				else
+					Cmd.LIGHTING2.subtype = 3;
+
+				//acknoledge 
+				Cmd.LIGHTING2.packettype = pTypeUndecoded;
+				Cmd.LIGHTING2.packetlength = 7;
+				Cmd.LIGHTING2.id1 = rssi >> 8;
+				Cmd.LIGHTING2.id2 = rssi & 0x00ff;
+				Cmd.LIGHTING2.id3 = NbPulsePerSec >> 8;
+				Cmd.LIGHTING2.id4 = NbPulsePerSec & 0x00ff;
+
+
+
+				Serial.write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
+
+
+				pinMode(PDATA, INPUT);
+				attachInterrupt(1, ext_int_1, CHANGE);
+				radio.setMode(RF69_MODE_RX);
+	*/
+			}
+			PulseLed(0);
+			DomoticPacketReceived = false;
+
+		}
+
+
+
+
 		usleep(10000l);
 	}
 	fclose(fp);

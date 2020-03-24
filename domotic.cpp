@@ -82,33 +82,37 @@ void DomoticReceive()
 		return;
 
 	byte nbCar = Serial.available();
-	if (nbCar)
+	while (nbCar != 0)
 	{
-        byte b = Serial.read();
-        if ( (millis()-lastTime) > 10000 ) {
-                receiveLength = 0 ;
-        }
-        lastTime = millis();
-				if (receiveLength >= sizeof(_tRBUF)) {
-					receiveLength = 0;
-				}
-        Cmd.Buffer[receiveLength++]=b;
+		{
+			byte b = Serial.Read();
+			if ((millis() - lastTime) > 10000) {
+				receiveLength = 0;
+			}
+			lastTime = millis();
+			if (receiveLength >= sizeof(_tRBUF)) {
+				receiveLength = 0;
+			}
+			Cmd.Buffer[receiveLength++] = b;
 
-				//if packet len not valid , wait valid
-				if (    (Cmd.LIGHTING2.packetlength != 13 )
-					   && (Cmd.LIGHTING2.packetlength != 11)
-					)
-					receiveLength = 0;
+			//if packet len not valid , wait valid
+			if ((Cmd.LIGHTING2.packetlength != 13)
+				&& (Cmd.LIGHTING2.packetlength != 11)
+				)
+				receiveLength = 0;
 
-				/* si paquet recu en entier */
-				if (receiveLength >= Cmd.LIGHTING2.packetlength + 1) {
-					DomoticPacketReceived=  true;
-					receiveLength = 0;
-				}
-				else
-					DomoticPacketReceived=  false;
+			/* si paquet recu en entier */
+			if (receiveLength >= Cmd.LIGHTING2.packetlength + 1) {
+				DomoticPacketReceived = true;
+				receiveLength = 0;
+			}
+			else
+				DomoticPacketReceived = false;
 
-    }
+			nbCar--;
+
+		}
+	}
 }    
 
 tRBUF Send ;

@@ -13,6 +13,9 @@
 #define OCT 8
 #define BIN 2
 
+int serialAvailable(int fd);
+
+
 class Print
 {
   public:
@@ -67,9 +70,35 @@ class Print
     static int println(double mes , int base = 2)            {return dprintf(out, "%f\n",mes) ; };
     static int println(void)								 {return dprintf(out, "\n") ; };
 
-	static int available() { return 0; }
-	static char read() { return 0; }
+	static int available() 
+	{ 
+		int nb =  serialAvailable(DomoticOut) ;
+		if (nb) dprintf(out, "NB:%d ", nb );
+		return nb;
+	}
+	static char Read() 
+	{ 
+		char inputbyte;
+		read(DomoticOut, &inputbyte, 1);
+		dprintf(out, "%02X ", inputbyte);
+
+		return inputbyte ;
+	}
+
+	static int Read(void* const pbuffer, unsigned const buffer_size)
+	{
+		int psize = read(DomoticOut, pbuffer, buffer_size);
+		char* buffer = (char*)pbuffer;
+		for (int i = 0; i < psize; i++) dprintf(out, "%02X", buffer[i]); dprintf(out, "\n");
+
+		return psize;
+	}
 };
+
+
+
+
+
 
 extern Print Serial ;
 
