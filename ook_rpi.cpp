@@ -19,11 +19,15 @@ std::string DeviceR = "/dev/gpiofreq";
 
 #include "ookdecoder.h"
 #include "oregon.h"
+
+
 #include "print.h"
 
 #ifndef DOMOTIC
 #include  "reportserialascii.h"
 #endif
+
+int Print::out;
 
 OregonDecoderV2 orscV2;
 
@@ -53,11 +57,14 @@ void reportSerial(const char* s, class DecodeOOK& decoder)
 #endif      
 }
 
+std::string  createVirtualSerial(int &fd);
 
 int ook_rpi_read_drv( int gpio)
 {
 	FILE* fp;
 	std::string Device;
+	std::string serial;
+
 
 	Device = DeviceR + "17";
 	printf("opening %s\n", Device.c_str() );
@@ -67,6 +74,11 @@ int ook_rpi_read_drv( int gpio)
 		printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());
 		exit(1);
 	}
+
+	//create virtual tty
+	Serial.out = fileno(stdout);
+	//serial = createVirtualSerial(Serial.out);
+
 
 	while (1) {
 		int count = fread(pulse, 4, 2048, fp);

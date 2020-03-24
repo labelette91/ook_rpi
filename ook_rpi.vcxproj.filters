@@ -24,10 +24,36 @@
     <ClCompile Include="virtualserial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Domotic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile">
       <Filter>Source Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="decodeotio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="deftype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ookdecoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="oregon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="print.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="reportserialascii.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

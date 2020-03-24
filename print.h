@@ -16,56 +16,56 @@
 class Print
 {
   public:
+	static  int out;
   
 	static int PRINT (unsigned long mes , int base , bool lf)
 	{
 			switch (base) {
-					case BIN : printf("%d",mes) ;
+					case BIN : dprintf(out,"%d",mes) ;
 					break;
-					case OCT:  printf("%o",mes) ;
+					case OCT:  dprintf(out, "%o",mes) ;
 					break;
-					case DEC : printf("%d",mes) ;
+					case DEC : dprintf(out, "%d",mes) ;
 					break;
-					case HEX : printf("%X",mes) ;
+					case HEX : dprintf(out, "%X",mes) ;
 					break;
-					default  : printf("%d",mes) ;
+					default  : dprintf(out, "%d",mes) ;
 					break;
 			}
-			if (lf)printf("\n") ;
+			if (lf)dprintf(out,"\n") ;
 			return 1;
 	}
 
-		
-		static int write(uint8_t mes ) {printf("%02X",mes) ; 			return 1; };
+	static int write(uint8_t mes ) {dprintf(out, "%02X",mes) ; 			return 1; };
 
-    static int write(const char *buffer, int size) {
+    static int write(void * pbuffer, int size) {
+		uint8_t*  buffer = (uint8_t *) pbuffer;
       for (int i=0;i<size;i++) write(buffer[i]);
+	  dprintf(out, "\n");
 	  return 1;
 
     }
-
-    static int write(const char *str) {
-      if (str == NULL) return 0;
-      return write( str, strlen(str));
-    }
     
-    static int print(const char mes [] )                     {return printf("%s",mes) ; };
-    static int print(char mes )                              {return printf("%c",mes) ; };
+    static int print(const char mes [] )                     {return dprintf(out, "%s",mes) ; };
+    static int print(char mes )                              {return dprintf(out, "%c",mes) ; };
     static int print(unsigned char mes , int base = DEC)     {return PRINT(mes,base,false) ; };
     static int print(int mes , int base = DEC)               {return PRINT(mes,base,false) ; };
     static int print(unsigned int mes, int base = DEC)       {return PRINT(mes,base,false) ; };
     static int print(long mes , int base = DEC)              {return PRINT(mes,base,false) ; };
     static int print(unsigned long mes , int base = DEC)     {return PRINT(mes,base,false) ; };
-    static int print(double mes , int base = 2)              {return printf("%f",mes) ; };
-    static int println(const char mes[])                     {return printf("%s\n",mes) ; };        
-    static int println(char mes )                            {return printf("%c\n",mes) ; };        
+    static int print(double mes , int base = 2)              {return dprintf(out, "%f",mes) ; };
+    static int println(const char mes[])                     {return dprintf(out, "%s\n",mes) ; };
+    static int println(char mes )                            {return dprintf(out, "%c\n",mes) ; };
     static int println(unsigned char mes , int base = DEC)   {return PRINT(mes,base,true) ; };   
     static int println(int mes , int base = DEC)             {return PRINT(mes,base,true) ; };   
     static int println(unsigned int mes , int base = DEC)    {return PRINT(mes,base,true) ; };   
     static int println(long mes , int base = DEC)            {return PRINT(mes,base,true) ; };   
     static int println(unsigned long mes , int base  = DEC)  {return PRINT(mes,base,true) ; };   
-    static int println(double mes , int base = 2)            {return printf("%f\n",mes) ; };        
-    static int println(void)																 {return printf("\n") ; };        
+    static int println(double mes , int base = 2)            {return dprintf(out, "%f\n",mes) ; };
+    static int println(void)								 {return dprintf(out, "\n") ; };
+
+	static int available() { return 0; }
+	static char read() { return 0; }
 };
 
 extern Print Serial ;

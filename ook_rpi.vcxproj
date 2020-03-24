@@ -153,12 +153,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Domotic.cpp" />
     <ClCompile Include="ook_rpi.cpp" />
     <ClCompile Include="Oregon.cpp" />
     <ClCompile Include="virtualserial.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="decodeotio.h" />
+    <ClInclude Include="deftype.h" />
+    <ClInclude Include="ookdecoder.h" />
+    <ClInclude Include="oregon.h" />
+    <ClInclude Include="print.h" />
+    <ClInclude Include="reportserialascii.h" />
+    <ClInclude Include="types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
