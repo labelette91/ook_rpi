@@ -164,6 +164,7 @@
   <ItemGroup>
     <ClInclude Include="decodeotio.h" />
     <ClInclude Include="deftype.h" />
+    <ClInclude Include="domotic.h" />
     <ClInclude Include="ookdecoder.h" />
     <ClInclude Include="oregon.h" />
     <ClInclude Include="print.h" />

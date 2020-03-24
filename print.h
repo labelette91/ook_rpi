@@ -6,7 +6,7 @@
 #include <string.h> // for int
 
 #include "deftype.h"
-
+#include <unistd.h>
 
 #define DEC 10
 #define HEX 16
@@ -17,7 +17,8 @@ class Print
 {
   public:
 	static  int out;
-  
+	static  int DomoticOut;
+
 	static int PRINT (unsigned long mes , int base , bool lf)
 	{
 			switch (base) {
@@ -36,16 +37,18 @@ class Print
 			return 1;
 	}
 
-	static int write(uint8_t mes ) {dprintf(out, "%02X",mes) ; 			return 1; };
+	static int Write(void* pbuffer, int size) {
+		uint8_t* buffer = (uint8_t*)pbuffer;
+		//log ascii
+		for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
 
-    static int write(void * pbuffer, int size) {
-		uint8_t*  buffer = (uint8_t *) pbuffer;
-      for (int i=0;i<size;i++) write(buffer[i]);
-	  dprintf(out, "\n");
-	  return 1;
+		write(DomoticOut, pbuffer, size );
+	
 
-    }
-    
+		return size;
+	}
+
+
     static int print(const char mes [] )                     {return dprintf(out, "%s",mes) ; };
     static int print(char mes )                              {return dprintf(out, "%c",mes) ; };
     static int print(unsigned char mes , int base = DEC)     {return PRINT(mes,base,false) ; };

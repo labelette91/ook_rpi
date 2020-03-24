@@ -135,7 +135,7 @@ void reportDomoticTemp ( int temp , byte id1 , byte id2 ,  byte bateryLevel){
 		Send.Temp.battery_level  = bateryLevel ;
 		Send.Temp.rssi           = 9 ;
             
-    Serial.write((byte*)&Send.Temp,9);
+    Serial.Write((byte*)&Send.Temp,9);
 }
 void reportDomoticTemp ( const byte* data){
 	reportDomoticTemp ( temperatureint(data) , 0x48  , 0x00 , battery(data) );
@@ -171,7 +171,7 @@ void reportDomoticTempHum ( int temp , byte hum , byte id1 , byte id2, byte bate
   Send.Temp_Hum.humidity_status= 0  ;
   
   
-  Serial.write((byte*)&Send.Temp_Hum,sizeof(Send.Temp_Hum));
+  Serial.Write((byte*)&Send.Temp_Hum,sizeof(Send.Temp_Hum));
 	}
               
 }
@@ -202,7 +202,7 @@ tlong= getTotalPower(data);
 	Send.ENERGY.total5=(tlong>> 8) & 0xff;
 	Send.ENERGY.total6=(tlong>> 0) & 0xff;
   
-  Serial.write((byte*)&Send.Temp_Hum,sizeof(Send.ENERGY));
+  Serial.Write((byte*)&Send.ENERGY,sizeof(Send.ENERGY));
               
 }
 
@@ -242,7 +242,7 @@ void DomoticStartReceive()
   Send.IRESPONSE.msg14='C';
   Send.IRESPONSE.msg15='O';
   Send.IRESPONSE.msg16='M';
-  Serial.write((byte*)&Send.IRESPONSE,sizeof(Send.IRESPONSE));
+  Serial.Write((byte*)&Send.IRESPONSE,sizeof(Send.IRESPONSE));
 
 }
 void DomoticStatus()
@@ -260,7 +260,7 @@ void DomoticStatus()
   Send.IRESPONSE.msg7    = 0  ;    //Hardware version
 		
 	
-  Serial.write((byte*)&Send.IRESPONSE,sizeof(Send.IRESPONSE));
+  Serial.Write((byte*)&Send.IRESPONSE,sizeof(Send.IRESPONSE));
 	
 }
 
@@ -272,7 +272,7 @@ void reportHagerDomoticUnk ( const byte* data, byte pos ){
   for (byte i = 0; i < pos; ++i) {
       Send.UNDECODED.msg[i]= data[i];
   }
-  Serial.write((byte*)&Send.UNDECODED,Send.UNDECODED.packetlength+1  );
+  Serial.Write((byte*)&Send.UNDECODED,Send.UNDECODED.packetlength+1  );
 }
 
 #ifdef Hager
@@ -311,7 +311,7 @@ void reportHagerDomoticSerial ( const byte* data, byte pos ){
 				Send.LIGHTING2.cmnd       = 1 ;         
 		else
 				Send.LIGHTING2.cmnd       = 0 ;         
-  Serial.write((byte*)&Send.LIGHTING2,Send.LIGHTING2.packetlength+1  );
+  Serial.Write((byte*)&Send.LIGHTING2,Send.LIGHTING2.packetlength+1  );
 }
 void reportHagerDomotic ( const byte* data, byte pos ){
 	byte zone =  GetZone(data);   
@@ -356,7 +356,7 @@ void reportDomoticHomeEasy ( const byte* data, byte pos ){
 */
   	Send.LIGHTING2.cmnd     = data[3] ;         
 
-    Serial.write((byte*)&Send.LIGHTING2,Send.LIGHTING2.packetlength+1  );
+    Serial.Write((byte*)&Send.LIGHTING2,Send.LIGHTING2.packetlength+1  );
 }
 
 void reportDomoticMD230(const byte* data, byte pos) {
@@ -384,7 +384,7 @@ void reportDomoticMD230(const byte* data, byte pos) {
 	else
 		Send.LIGHTING2.cmnd = 1;
 
-	Serial.write((byte*)&Send.LIGHTING2, Send.LIGHTING2.packetlength + 1);
+	Serial.Write((byte*)&Send.LIGHTING2, Send.LIGHTING2.packetlength + 1);
 }
 
 

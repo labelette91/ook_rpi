@@ -8,26 +8,31 @@ C code : test.cpp
 */
 
 #define OTIO_ENABLE
+#define  DOMOTIC
+#define REPORT_SERIAL
+
 
 #include <stdlib.h>
 #include <string>
 #include <stdio.h>
-#include <time.h>
 #include <unistd.h>
+#include <time.h>
+
 
 std::string DeviceR = "/dev/gpiofreq";
 
 #include "ookdecoder.h"
 #include "oregon.h"
-
+#include "domotic.h"
 
 #include "print.h"
 
-#ifndef DOMOTIC
+#ifdef REPORT_SERIAL
 #include  "reportserialascii.h"
 #endif
 
 int Print::out;
+int Print::DomoticOut;
 
 OregonDecoderV2 orscV2;
 
@@ -50,9 +55,10 @@ void PulseLed()
 
 void reportSerial(const char* s, class DecodeOOK& decoder)
 {
-#ifndef DOMOTIC
+#ifdef REPORT_SERIAL
 	reportSerialAscii("OSV2", decoder.getData(), decoder.pos);
-#else            
+#endif
+#ifdef DOMOTIC
 	reportDomotic(decoder.getData(), decoder.pos);
 #endif      
 }
@@ -77,7 +83,8 @@ int ook_rpi_read_drv( int gpio)
 
 	//create virtual tty
 	Serial.out = fileno(stdout);
-	//serial = createVirtualSerial(Serial.out);
+	
+	serial = createVirtualSerial(Serial.DomoticOut);
 
 
 	while (1) {
@@ -110,7 +117,7 @@ int ook_rpi_read_drv( int gpio)
 				}
 					else
 					{
-#ifndef DOMOTIC
+#ifdef REPORT_SERIAL
 						Serial.println("Bad checksum");
 						reportSerial("OSV2", orscV2);
 #endif     
@@ -122,9 +129,10 @@ int ook_rpi_read_drv( int gpio)
 
 #ifdef OTIO_ENABLE        
 				if (Otio.nextPulse(p, pinData)) {
-#ifndef DOMOTIC
+#ifdef REPORT_SERIAL
 					Otio.ReportSerial();
-#else
+#endif
+#ifdef DOMOTIC
 					reportDomoticTemp(Otio.getTemperature(), Otio.getId(), 0, Otio.getBatteryLevel());
 #endif
 					PulseLed();
@@ -158,8 +166,20 @@ int main()
 //   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
 //   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
 
-
 int millis()
+{
+
+	long            ms; // Milliseconds
+	time_t          s;  // Seconds
+	struct timespec spec;
+
+	clock_gettime(CLOCK_REALTIME, &spec);
+
+	ms = spec.tv_sec * 1000 + (spec.tv_nsec / 1000000 ); 
+
+	return ms;
+}
+int micros()
 {
 	return 0;
 }

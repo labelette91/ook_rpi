@@ -1,3 +1,4 @@
+extern int millis();
 class DecodeOTIO {
 public:
     byte total_bits, state, MaxTemp , NbTempOk ;

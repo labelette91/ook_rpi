@@ -112,8 +112,7 @@ void reportSerialAscii (const char* s, const byte* data,byte pos) {
          // Display only for main frame
          // Secondary frame is only 6 Bytes long
          Serial.print(" ,total:");
-         printf("%u",getTotalPower((byte*)data));
-		 //Serial.print(getTotalPower((byte*)data));
+		 Serial.print(getTotalPower((byte*)data));
 		 Serial.print(" ,total kWh:");
          Serial.print(getTotalPower((byte*)data)/3600/1000);
        }
