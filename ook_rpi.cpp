@@ -17,6 +17,8 @@ C code : test.cpp
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
+#include <sched.h>    
+#include <wiringPi.h>
 
 
 std::string DeviceR = "/dev/gpiofreq";
@@ -36,16 +38,28 @@ int Print::DomoticOut;
 
 OregonDecoderV2 orscV2;
 
+#include "HomeEasyTransmitter.h"
+HomeEasyTransmitter* easy;
+
+// RFM69* radio;
+
+
+
 byte data[4];
 
 #define MAXS 4096
 int pulse[MAXS];
-int 	NbPulse;
+int 	NbPulse = 0 ;
+int     NbPulses =0;
 
 #ifdef OTIO_ENABLE        
 #include "decodeotio.h"
 DecodeOTIO Otio(3);
 #endif
+
+//attention numeo general pin et pas GPIO
+#define TXPIN 1 
+#define RXPIN 17
 
 
 int pin = 0;
@@ -60,9 +74,9 @@ void PulseLed(int Level)
 	//echo gpio | sudo tee /sys/class/leds/led1/trigger
 
 	if (pin)
-		system("echo 1 | sudo tee /sys/class/leds/led1/brightness");
+		system("echo 1 | sudo tee /sys/class/leds/led1/brightness > /dev/null");
 	else
-		system("echo 0 | sudo tee /sys/class/leds/led1/brightness");
+		system("echo 0 | sudo tee /sys/class/leds/led1/brightness > /dev/null");
 
 }
 
@@ -76,6 +90,24 @@ void reportSerial(const char* s, class DecodeOOK& decoder)
 #endif      
 }
 
+#define  SLEEP_TIME_IN_US 10000l
+int CtMs = 0;
+
+void UpDatePulseCounter(int count )
+{
+	NbPulses += count;
+	CtMs += (SLEEP_TIME_IN_US/1000l);
+	if ((CtMs % 1000l) == 0)
+	{
+		NbPulse = NbPulses;
+		NbPulses = 0;
+		//			fprintf(stdout,"NbPulse %d\n", NbPulsePerSec);
+		//			easy->initPin();
+		//			easy->setSwitch(1, 0x55, 1);    // turn on device 0
+
+	}
+
+}
 std::string  createVirtualSerial(int &fd);
 
 int ook_rpi_read_drv( int gpio)
@@ -83,6 +115,7 @@ int ook_rpi_read_drv( int gpio)
 	FILE* fp;
 	std::string Device;
 	std::string serial;
+	
 
 	//power led sur gpio
 	system("echo gpio | sudo tee /sys/class/leds/led1/trigger");
@@ -98,14 +131,17 @@ int ook_rpi_read_drv( int gpio)
 
 	//create virtual tty
 	Serial.out = fileno(stdout);
-	
 	serial = createVirtualSerial(Serial.DomoticOut);
-
+	if (wiringPiSetup() == -1)
+	{
+		printf("[ERROR] failed to initialize wiring pi");
+		exit(1);
+	}
+	easy = new HomeEasyTransmitter(TXPIN, 0);
 
 	while (1) {
 		int count = fread(pulse, 4, 2048, fp);
-
-
+		UpDatePulseCounter(count);
 		if (count > 0)
 		{
 			for (int i = 0; i < count; i++)
@@ -127,9 +163,8 @@ int ook_rpi_read_drv( int gpio)
 							data[1] = orscV2.data[1];
 							data[2] = orscV2.data[2];
 							data[3] = orscV2.data[3];
-
+						}
 					}
-				}
 					else
 					{
 #ifdef REPORT_SERIAL
@@ -138,9 +173,7 @@ int ook_rpi_read_drv( int gpio)
 #endif     
 					}
 					orscV2.resetDecoder();
-
-
-			}
+				}
 
 #ifdef OTIO_ENABLE        
 				if (Otio.nextPulse(p, pinData)) {
@@ -153,8 +186,7 @@ int ook_rpi_read_drv( int gpio)
 					PulseLed(2);
 				}
 #endif      	
-
-		}
+			}
 		}
 
 
@@ -173,6 +205,8 @@ int ook_rpi_read_drv( int gpio)
 //		  && (MD230.total_bits == 0)
 			)
 		{
+			int rssi;
+
 			PulseLed( 1);
 
 			//start receive cmd
@@ -184,24 +218,32 @@ int ook_rpi_read_drv( int gpio)
 			}
 			else
 			{
-/*
-				rssi = radio.readRSSI();
 
-				detachInterrupt(1);
-				easy.initPin();
-				radio.setMode(RF69_MODE_TX);
+/*
+fclose(fp);
+				fp = fopen(Device.c_str(), "w");
+				if (fp == NULL) {printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
+*/
+
+
+//				rssi = radio.readRSSI();
+
+//				detachInterrupt(1);
+				easy->initPin();
+//				radio.setMode(RF69_MODE_TX);
 				delay(10);
 
 				if (Cmd.LIGHTING2.packettype == pTypeLighting2)
 				{  //
+					printf("easy send\n");
 					if (Cmd.LIGHTING2.subtype == sTypeHEU) 	         //if home easy protocol : subtype==1
 					{
-						easy.setSwitch(Cmd.LIGHTING2.cmnd, getLightingId(), Cmd.LIGHTING2.unitcode);    // turn on device 0
+						easy->setSwitch(Cmd.LIGHTING2.cmnd, getLightingId(), Cmd.LIGHTING2.unitcode);    // turn on device 0
 						Cmd.LIGHTING2.subtype = 1;
 					}
 					else if (Cmd.LIGHTING2.subtype == sTypeAC) 	         //if hager protocol : subtype==0
 					{
-						ManageHager(Cmd.LIGHTING2.id4, Cmd.LIGHTING2.unitcode, Cmd.LIGHTING2.cmnd);
+						//ManageHager(Cmd.LIGHTING2.id4, Cmd.LIGHTING2.unitcode, Cmd.LIGHTING2.cmnd);
 						Cmd.LIGHTING2.subtype = 0;
 					}
 					else
@@ -216,53 +258,31 @@ int ook_rpi_read_drv( int gpio)
 				Cmd.LIGHTING2.packetlength = 7;
 				Cmd.LIGHTING2.id1 = rssi >> 8;
 				Cmd.LIGHTING2.id2 = rssi & 0x00ff;
-				Cmd.LIGHTING2.id3 = NbPulsePerSec >> 8;
-				Cmd.LIGHTING2.id4 = NbPulsePerSec & 0x00ff;
+				Cmd.LIGHTING2.id3 = NbPulse >> 8;
+				Cmd.LIGHTING2.id4 = NbPulse & 0x00ff;
+//				Serial.write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
 
-
-
-				Serial.write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
-
-
-				pinMode(PDATA, INPUT);
-				attachInterrupt(1, ext_int_1, CHANGE);
-				radio.setMode(RF69_MODE_RX);
-	*/
+//				pinMode(PDATA, INPUT);
+//				attachInterrupt(1, ext_int_1, CHANGE);
+//				radio.setMode(RF69_MODE_RX);
+	
 			}
 			PulseLed(0);
 			DomoticPacketReceived = false;
-
 		}
-
-
-
-
-		usleep(10000l);
+		usleep(SLEEP_TIME_IN_US);
 	}
 	fclose(fp);
 	return 0;
 }
-
-
-
 
 int main()
 {
 	ook_rpi_read_drv(17);
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
-
-int millis()
+#ifdef WIN32
+unsigned int millis(void)
 {
 
 	long            ms; // Milliseconds
@@ -271,20 +291,32 @@ int millis()
 
 	clock_gettime(CLOCK_REALTIME, &spec);
 
-	ms = spec.tv_sec * 1000 + (spec.tv_nsec / 1000000 ); 
+	ms = spec.tv_sec * 1000 + (spec.tv_nsec / 1000000);
 
 	return ms;
 }
-int micros()
-{
-	return 0;
-}
-
-#ifdef WIN32
 
 int usleep(int)
 {
 	return 0;
 
 }
+#else
+void scheduler_realtime(void) {
+
+struct sched_param p;
+p.__sched_priority = sched_get_priority_max(SCHED_RR);
+if (sched_setscheduler(0, SCHED_RR, &p) == -1) {
+	printf( "Failed to switch to realtime scheduler.");
+}
+}
+
+void scheduler_standard(void) {
+	struct sched_param p;
+	p.__sched_priority = 0;
+	if (sched_setscheduler(0, SCHED_OTHER, &p) == -1) {
+		printf( "Failed to switch to normal scheduler.");
+	}
+}
+
 #endif

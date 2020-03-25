@@ -154,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Domotic.cpp" />
+    <ClCompile Include="HomeEasyTransmitter.cpp" />
     <ClCompile Include="ook_rpi.cpp" />
     <ClCompile Include="Oregon.cpp" />
     <ClCompile Include="virtualserial.cpp" />

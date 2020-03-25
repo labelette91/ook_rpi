@@ -43,7 +43,7 @@ class Print
 	static int Write(void* pbuffer, int size) {
 		uint8_t* buffer = (uint8_t*)pbuffer;
 		//log ascii
-		for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
+		dprintf(out, "WR:");for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
 
 		write(DomoticOut, pbuffer, size );
 	
@@ -73,14 +73,14 @@ class Print
 	static int available() 
 	{ 
 		int nb =  serialAvailable(DomoticOut) ;
-		if (nb) dprintf(out, "NB:%d ", nb );
+//		if (nb) dprintf(out, "NB:%d ", nb );
 		return nb;
 	}
 	static char Read() 
 	{ 
 		char inputbyte;
 		read(DomoticOut, &inputbyte, 1);
-		dprintf(out, "%02X ", inputbyte);
+//		dprintf(out, "%02X ", inputbyte);
 
 		return inputbyte ;
 	}
@@ -89,7 +89,7 @@ class Print
 	{
 		int psize = read(DomoticOut, pbuffer, buffer_size);
 		char* buffer = (char*)pbuffer;
-		for (int i = 0; i < psize; i++) dprintf(out, "%02X", buffer[i]); dprintf(out, "\n");
+//		for (int i = 0; i < psize; i++) dprintf(out, "%02X", buffer[i]); dprintf(out, "\n");
 
 		return psize;
 	}

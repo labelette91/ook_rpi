@@ -11,13 +11,13 @@ CFLAGS = -c -MMD
 LDFLAGS += -Xlinker --defsym -Xlinker RFRPI_BUILD_DATE=$$(date +'%Y%m%d') -L/usr/local/lib
 
 rfrpi_dir = ./
-rfrpi_files = ./ook_rpi.cpp ./oregon.cpp ./virtualserial.cpp ./domotic.cpp
+rfrpi_files = ./ook_rpi.cpp ./oregon.cpp ./virtualserial.cpp ./domotic.cpp ./HomeEasyTransmitter.cpp 
 rfrpi_objects=$(addsuffix .o,$(addprefix $(OBJ_DIR)/,$(basename $(notdir $(rfrpi_files))))) 
 
 target_dir = .
 target_files+= ook_rpi.cpp
 target_objects=$(addsuffix .o,$(addprefix $(OBJ_DIR)/,$(basename $(notdir $(target_files))))) 
-target=./ook_rpi
+target=./rpi_ook
 
 
 all:  $(target) 

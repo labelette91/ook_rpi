@@ -1,4 +1,4 @@
-extern int millis();
+extern int unsigned millis(void);
 extern int NbPulse;
 
 void printBinary ( byte * data , byte pos)

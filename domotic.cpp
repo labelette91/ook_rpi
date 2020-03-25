@@ -11,7 +11,7 @@
 
 #include "print.h"
 
-extern int millis();
+extern "C" unsigned int millis();
 
 tRBUF Cmd ;
 unsigned long  lastTime;  

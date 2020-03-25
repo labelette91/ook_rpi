@@ -17,7 +17,7 @@ typedef unsigned short word;
 #define sei() scheduler_standard() 
 
 extern "C" void delayMicrosecondsHard(unsigned int howLong);
-extern void scheduler_realtime();
-extern void scheduler_standard();
+extern  void scheduler_realtime(void);
+extern  void scheduler_standard(void);
 
 #endif
