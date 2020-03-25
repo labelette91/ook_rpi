@@ -19,7 +19,7 @@ C code : test.cpp
 #include <time.h>
 #include <sched.h>    
 #include <wiringPi.h>
-
+#include "hager.h"
 
 std::string DeviceR = "/dev/gpiofreq";
 
@@ -138,6 +138,7 @@ int ook_rpi_read_drv( int gpio)
 		exit(1);
 	}
 	easy = new HomeEasyTransmitter(TXPIN, 0);
+	HagerSetPin                   (TXPIN, 0);
 
 	while (1) {
 		int count = fread(pulse, 4, 2048, fp);
@@ -235,15 +236,16 @@ fclose(fp);
 
 				if (Cmd.LIGHTING2.packettype == pTypeLighting2)
 				{  //
-					printf("easy send\n");
 					if (Cmd.LIGHTING2.subtype == sTypeHEU) 	         //if home easy protocol : subtype==1
 					{
+						printf("easy send\n");
 						easy->setSwitch(Cmd.LIGHTING2.cmnd, getLightingId(), Cmd.LIGHTING2.unitcode);    // turn on device 0
 						Cmd.LIGHTING2.subtype = 1;
 					}
 					else if (Cmd.LIGHTING2.subtype == sTypeAC) 	         //if hager protocol : subtype==0
 					{
-						//ManageHager(Cmd.LIGHTING2.id4, Cmd.LIGHTING2.unitcode, Cmd.LIGHTING2.cmnd);
+						printf("Hager send\n");
+						ManageHager(Cmd.LIGHTING2.id4, Cmd.LIGHTING2.unitcode, Cmd.LIGHTING2.cmnd);
 						Cmd.LIGHTING2.subtype = 0;
 					}
 					else

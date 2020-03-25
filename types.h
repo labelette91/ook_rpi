@@ -3,20 +3,5 @@
 
 #include "deftype.h"
 
-typedef union T_int {
-char Car[2] ;
-word  Int;
-}T_INT;
-
-typedef union T_long {
-char Car[4] ;
-int Long ;
-}T_LONG;
-
-typedef union T_double {
-double Car[8] ;
-long Double ;
-}T_DOUBLE;
-
 #endif
 
