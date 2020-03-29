@@ -100,9 +100,11 @@ bool RFM69::initialize(byte freqBand, byte nodeID, byte networkID)
   pinMode(_slaveSelectPin, OUTPUT);
   SPI.begin();
   
-	do { writeReg(REG_SYNCVALUE1, 0xaa);i++; }while ((readReg(REG_SYNCVALUE1) != 0xaa)&&(i<0x7fff) );
+	do { writeReg(REG_SYNCVALUE1, 0xaa);i++; }while ((readReg(REG_SYNCVALUE1) != 0xaa)&&(i< MAX_WAIT) );
+	if (i >= MAX_WAIT)
+		return false;
 	i=0;
-	do { writeReg(REG_SYNCVALUE1, 0x55);i++; }while ((readReg(REG_SYNCVALUE1) != 0x55)&&(i< 0x7fff) );
+	do { writeReg(REG_SYNCVALUE1, 0x55);i++; }while ((readReg(REG_SYNCVALUE1) != 0x55)&&(i< MAX_WAIT) );
 
   for (byte i = 0; CONFIG[i][0] != 255; i++)
     writeReg(CONFIG[i][0], CONFIG[i][1]);
@@ -114,12 +116,12 @@ bool RFM69::initialize(byte freqBand, byte nodeID, byte networkID)
   setHighPower(_isRFM69HW); //called regardless if it's a RFM69W or RFM69HW
   setMode(RF69_MODE_STANDBY);
 	i=0;
-	while (((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00)&&(i++< 0x7ff0)); // Wait for ModeReady
+	while (((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00)&&(i++< MAX_WAIT)); // Wait for ModeReady
 //  attachInterrupt(_interruptNum, RFM69::isr0, RISING);
 
   selfPointer = this;
   _address = nodeID;
-  if (i >= 0x7ff0)
+  if (i >= MAX_WAIT)
 	  return false;
   else
   return true;
@@ -160,12 +162,9 @@ void RFM69::setMode(byte newMode)
 	// we are using packet mode, so this check is not really needed
   // but waiting for mode ready is necessary when going from sleep because the FIFO may not be immediately available from previous mode
 //	while (_mode == RF69_MODE_SLEEP && (readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00); // Wait for ModeReady
-	word  i = 0xFFFF;
-	while ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00)
+	word  i = MAX_WAIT;
+	while ( ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00) && (i--!=0) )
 	{
-		i--;
-		if (i == 0)
-			break;
 	}; // Wait for ModeReady
 
 	_mode = newMode;
