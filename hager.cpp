@@ -212,6 +212,7 @@ void HagerSend ( byte * addr , byte cmnd )
 	HagerChk = ~HagerChk + 1 ;
 		
 	HagerSendByte(HagerChk);
+	digitalWrite(pData, LOW);
   sei();
 
 }

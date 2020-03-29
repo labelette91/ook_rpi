@@ -68,8 +68,8 @@ DecodeOTIO Otio(3);
 #endif
 
 //attention numeo general pin et pas GPIO
-#define TXPIN 24 
-#define RXPIN 24
+#define TXPIN 5
+#define RXPIN 5
 
 #include "rfmPrint.cpp"
 
@@ -112,6 +112,7 @@ void UpDatePulseCounter(int count )
 	{
 		NbPulse = NbPulses;
 		NbPulses = 0;
+		//fprintf(stdout, " NbPulse %d\n", NbPulse);
 		//			fprintf(stdout,"NbPulse %d\n", NbPulsePerSec);
 		//			easy->initPin();
 		//			easy->setSwitch(1, 0x55, 1);    // turn on device 0
@@ -157,6 +158,7 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 	//create virtual tty
 	Serial.out = fileno(stdout);
 	serial = createVirtualSerial(Serial.DomoticOut);
+
 	easy = new HomeEasyTransmitter(TXPIN, 0);
 	HagerSetPin                   (TXPIN, 0);
 
@@ -179,13 +181,15 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 	else
 		radio->setMode(RF69_MODE_RX);
 
-	readListRegs(RegList);
+//	readListRegs(RegList);
 	PrintReg(REG_OPMODE);
+
+	DomoticInit();
 
 	printf("running\n" );
 	while (1) {
 		int count = 0;
-	 count = fread(pulse, 4, 2048, fp);
+		count = fread(pulse, 4, 2048, fp);
 		UpDatePulseCounter(count);
 		if (count > 0)
 		{
@@ -238,7 +242,6 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 
 		//read serial input & fill receive buffe(
 		DomoticReceive();
-		DomoticPacketReceived = 0;
 		//check domotic send command reception
 		//attente une secone max pour emetre si emission en cours -80--> -70
 		//pas de reception en cours
@@ -257,19 +260,23 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 
 			//start receive cmd
 			if ((Cmd.ICMND.packettype == 0) && (Cmd.ICMND.cmnd == cmdStartRec)) {
+				printf("DomoticStartReceive\n");
+
 				DomoticStartReceive();
 			}
 			else if ((Cmd.ICMND.packettype == 0) && (Cmd.ICMND.cmnd == cmdSTATUS)) {
+				printf("DomoticStatus\n");
 				DomoticStatus();
+			}
+			else if ((Cmd.ICMND.packettype == 0) && (Cmd.ICMND.cmnd == cmdRESET)) {
+				printf("cmdRESET\n");
 			}
 			else
 			{
 
 				fclose(fp);
 //				fp = fopen(Device.c_str(), "w");
-//				if (fp == NULL) {printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
-
-
+//				if (fp == NULL) {printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
 
 				rssi = radio->readRSSI();
 
@@ -280,6 +287,7 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 
 				if (Cmd.LIGHTING2.packettype == pTypeLighting2)
 				{  //
+
 					if (Cmd.LIGHTING2.subtype == sTypeHEU) 	         //if home easy protocol : subtype==1
 					{
 						printf("easy send\n");
@@ -308,15 +316,16 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 				Cmd.LIGHTING2.id4 = NbPulse & 0x00ff;
 				Serial.Write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
 
-//				pinMode(PDATA, INPUT);
 //				attachInterrupt(1, ext_int_1, CHANGE);
 				radio->setMode(RF69_MODE_RX);
+				PrintReg(REG_OPMODE);
+				pinMode(TXPIN, INPUT);
 
 				//open pulse driver
 				fp = fopen(Device.c_str(), "r");
 				if (fp == NULL) {
-					printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());
-					exit(1);
+					printf("[ERROR] reopen  %s device not found - kernel driver must be started !!\n", Device.c_str());
+					//exit(1);
 				}
 
 

@@ -94,7 +94,7 @@ void HomeEasyTransmitter::rfm69_set_data(byte state)
     if (clkPin>=0)
         rfm69_set_data_with_clk(state) ;
     else
-        rfm69_set_data_with_clk( state);
+		rfm69_set_data_without_clk( state);
 }
 void HomeEasyTransmitter::rfm69_set_data_without_clk(byte state)
 {

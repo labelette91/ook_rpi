@@ -7,7 +7,7 @@
 
 #include "deftype.h"
 #include <unistd.h>
-
+#include <errno.h>
 #define DEC 10
 #define HEX 16
 #define OCT 8
@@ -40,12 +40,17 @@ class Print
 			return 1;
 	}
 
+
 	static int Write(void* pbuffer, int size) {
 		uint8_t* buffer = (uint8_t*)pbuffer;
 		//log ascii
-//		dprintf(out, "WR:");for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
+		dprintf(out, "WR:");for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
 
-		write(DomoticOut, pbuffer, size );
+		int err = write(DomoticOut, pbuffer, size );
+		if (err <= 0)
+		{
+			printf("error %d writing TTY : %d \n", err, strerror(errno));
+		}
 	
 
 		return size;
