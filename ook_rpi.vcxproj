@@ -153,11 +153,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\rfrpi_src\gpio-freq\gpio-freq.c" />
     <ClCompile Include="Domotic.cpp" />
     <ClCompile Include="hager.cpp" />
     <ClCompile Include="HomeEasyTransmitter.cpp" />
     <ClCompile Include="ook_rpi.cpp" />
     <ClCompile Include="Oregon.cpp" />
+    <ClCompile Include="RFM69.cpp" />
     <ClCompile Include="virtualserial.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -171,6 +173,8 @@
     <ClInclude Include="oregon.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="reportserialascii.h" />
+    <ClInclude Include="RFM69.h" />
+    <ClInclude Include="SPI.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

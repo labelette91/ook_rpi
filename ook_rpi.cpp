@@ -20,6 +20,21 @@ C code : test.cpp
 #include <sched.h>    
 #include <wiringPi.h>
 #include "hager.h"
+#include "print.h"
+
+//rfm69 and spi *************************		
+
+#include "RFM69.h"
+#include "RFM69registers.h"
+#include "SPI.h"
+
+SPIClass SPI;
+
+RFM69* radio;
+
+
+int SPI_CHAN = 1;
+int Spi_speed = 500000;
 
 std::string DeviceR = "/dev/gpiofreq";
 
@@ -27,7 +42,6 @@ std::string DeviceR = "/dev/gpiofreq";
 #include "oregon.h"
 #include "domotic.h"
 
-#include "print.h"
 
 #ifdef REPORT_SERIAL
 #include  "reportserialascii.h"
@@ -40,10 +54,6 @@ OregonDecoderV2 orscV2;
 
 #include "HomeEasyTransmitter.h"
 HomeEasyTransmitter* easy;
-
-// RFM69* radio;
-
-
 
 byte data[4];
 
@@ -58,9 +68,10 @@ DecodeOTIO Otio(3);
 #endif
 
 //attention numeo general pin et pas GPIO
-#define TXPIN 1 
-#define RXPIN 17
+#define TXPIN 24 
+#define RXPIN 24
 
+#include "rfmPrint.cpp"
 
 int pin = 0;
 void PulseLed(int Level)
@@ -104,13 +115,24 @@ void UpDatePulseCounter(int count )
 		//			fprintf(stdout,"NbPulse %d\n", NbPulsePerSec);
 		//			easy->initPin();
 		//			easy->setSwitch(1, 0x55, 1);    // turn on device 0
+		static int lastrssi=0;
 
+		/*
+		
+		int rssi = radio->readRSSI();
+		if (lastrssi != rssi) 
+		{
+			printf("rssi:%d ", rssi);
+			fprintf(stdout, " NbPulse %d\n", NbPulse);
+		}
+		lastrssi = rssi;
+		*/
 	}
 
 }
 std::string  createVirtualSerial(int &fd);
 
-int ook_rpi_read_drv( int gpio)
+int ook_rpi_read_drv( char * rxgpio, int debug)
 {
 	FILE* fp;
 	std::string Device;
@@ -120,34 +142,57 @@ int ook_rpi_read_drv( int gpio)
 	//power led sur gpio
 	system("echo gpio | sudo tee /sys/class/leds/led1/trigger");
 
-	Device = DeviceR + "17";
+	if (wiringPiSetup() == -1)	{printf("[ERROR] failed to initialize wiring pi");exit(1);	}
+
+	//if receiver declared , init receive pin
+	if (RXPIN != -1) pinMode(RXPIN, INPUT);
+
+	Device = DeviceR + rxgpio ;
 	printf("opening %s\n", Device.c_str() );
 
+	//open pulse driver
 	fp = fopen(Device.c_str(), "r");
-	if (fp == NULL) {
-		printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());
-		exit(1);
-	}
+	if (fp == NULL) {printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());		/*exit(1);*/ 	}
 
 	//create virtual tty
 	Serial.out = fileno(stdout);
 	serial = createVirtualSerial(Serial.DomoticOut);
-	if (wiringPiSetup() == -1)
-	{
-		printf("[ERROR] failed to initialize wiring pi");
-		exit(1);
-	}
 	easy = new HomeEasyTransmitter(TXPIN, 0);
 	HagerSetPin                   (TXPIN, 0);
 
+	//init SPI
+	if (SPI.Setup(SPI_CHAN, Spi_speed))
+		printf( "failed to open the SPI bus: ");
+
+	//init radio module RFF
+	radio = new RFM69(0, 0);
+	if (radio->initialize(RF69_433MHZ, 1, 100) )
+		printf( "HERF: RFM69 initialized TX:%d RX:%d\n", TXPIN, RXPIN);
+	else
+		printf("HERF: RFM69 not initialized \n", TXPIN, RXPIN);
+
+	if (RXPIN != -1) pinMode(RXPIN, INPUT);
+
+	//si pin TX <> RX
+	if (TXPIN != RXPIN)
+		radio->setMode(RF69_MODE_SLEEP);
+	else
+		radio->setMode(RF69_MODE_RX);
+
+	readListRegs(RegList);
+	PrintReg(REG_OPMODE);
+
+	printf("running\n" );
 	while (1) {
-		int count = fread(pulse, 4, 2048, fp);
+		int count = 0;
+	 count = fread(pulse, 4, 2048, fp);
 		UpDatePulseCounter(count);
 		if (count > 0)
 		{
 			for (int i = 0; i < count; i++)
 			{
 				word p = pulse[i];
+				//printf("%d ", p);
 				//get pinData
 				int pinData = p & 1;
 
@@ -193,7 +238,7 @@ int ook_rpi_read_drv( int gpio)
 
 		//read serial input & fill receive buffe(
 		DomoticReceive();
-
+		DomoticPacketReceived = 0;
 		//check domotic send command reception
 		//attente une secone max pour emetre si emission en cours -80--> -70
 		//pas de reception en cours
@@ -220,18 +265,17 @@ int ook_rpi_read_drv( int gpio)
 			else
 			{
 
-/*
-fclose(fp);
-				fp = fopen(Device.c_str(), "w");
-				if (fp == NULL) {printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
-*/
+				fclose(fp);
+//				fp = fopen(Device.c_str(), "w");
+//				if (fp == NULL) {printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
 
 
-//				rssi = radio.readRSSI();
+
+				rssi = radio->readRSSI();
 
 //				detachInterrupt(1);
 				easy->initPin();
-//				radio.setMode(RF69_MODE_TX);
+				radio->setMode(RF69_MODE_TX);
 				delay(10);
 
 				if (Cmd.LIGHTING2.packettype == pTypeLighting2)
@@ -262,12 +306,20 @@ fclose(fp);
 				Cmd.LIGHTING2.id2 = rssi & 0x00ff;
 				Cmd.LIGHTING2.id3 = NbPulse >> 8;
 				Cmd.LIGHTING2.id4 = NbPulse & 0x00ff;
-//				Serial.write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
+				Serial.Write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
 
 //				pinMode(PDATA, INPUT);
 //				attachInterrupt(1, ext_int_1, CHANGE);
-//				radio.setMode(RF69_MODE_RX);
-	
+				radio->setMode(RF69_MODE_RX);
+
+				//open pulse driver
+				fp = fopen(Device.c_str(), "r");
+				if (fp == NULL) {
+					printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());
+					exit(1);
+				}
+
+
 			}
 			PulseLed(0);
 			DomoticPacketReceived = false;
@@ -278,9 +330,17 @@ fclose(fp);
 	return 0;
 }
 
-int main()
+int main(int argc , char** argv)
 {
-	ook_rpi_read_drv(17);
+	int debug = 0xff;
+	char* rxPin =(char*) "17";
+	if (argc > 1)
+		rxPin = argv[1];
+	if (argc > 2)
+		debug = atoi(argv[2]);
+
+	printf("%s %d\n", rxPin,debug);
+	ook_rpi_read_drv(rxPin, debug);
 }
 
 #ifdef WIN32

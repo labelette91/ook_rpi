@@ -43,7 +43,7 @@ class Print
 	static int Write(void* pbuffer, int size) {
 		uint8_t* buffer = (uint8_t*)pbuffer;
 		//log ascii
-		dprintf(out, "WR:");for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
+//		dprintf(out, "WR:");for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
 
 		write(DomoticOut, pbuffer, size );
 	
