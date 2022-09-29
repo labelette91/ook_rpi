@@ -24,28 +24,29 @@ class Print
 
 	static int PRINT (unsigned long mes , int base , bool lf)
 	{
+		int nb = 1;
 			switch (base) {
-					case BIN : dprintf(out,"%d",mes) ;
+					case BIN : nb= dprintf(out,"%d",mes) ;
 					break;
-					case OCT:  dprintf(out, "%o",mes) ;
+					case OCT:  nb = dprintf(out, "%o",mes) ;
 					break;
-					case DEC : dprintf(out, "%d",mes) ;
+					case DEC : nb = dprintf(out, "%d",mes) ;
 					break;
-					case HEX : dprintf(out, "%X",mes) ;
+					case HEX : nb = dprintf(out, "%X",mes) ;
 					break;
-					default  : dprintf(out, "%d",mes) ;
+					default  : nb = dprintf(out, "%d",mes) ;
 					break;
 			}
 			if (lf)dprintf(out,"\n") ;
-			return 1;
+			return nb;
 	}
 
 
 	static int Write(void* pbuffer, int size) {
 		uint8_t* buffer = (uint8_t*)pbuffer;
 		//log ascii
-		dprintf(out, "WR:");for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
-
+		//dprintf(out, "WR:");for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
+		
 		int err = write(DomoticOut, pbuffer, size );
 		if (err <= 0)
 		{

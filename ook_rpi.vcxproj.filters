@@ -76,5 +76,8 @@
     <ClInclude Include="RFM69.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RFM69registers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -19,7 +19,7 @@ const char * RegName[] = {
 "LISTEN1      ",
 "LISTEN2      ",
 "LISTEN3      ",
-"VERSION      ",
+"VERSION      ",//10
 "PALEVEL      ",
 "PARAMP       ",
 "OCP          ",
@@ -35,7 +35,7 @@ const char * RegName[] = {
 "OOKFIX       ",
 "AFCFEI       ",
 "AFCMSB       ",
-"AFCLSB       ",
+"AFCLSB       ",//20
 "FEIMSB       ",
 "FEILSB       ",
 "RSSICONFIG   ",
@@ -51,7 +51,7 @@ const char * RegName[] = {
 "PREAMBLELSB  ",
 "SYNCCONFIG   ",
 "SYNCVALUE1   ",
-"SYNCVALUE2   ",
+"SYNCVALUE2   ",//30
 "SYNCVALUE3   ",
 "SYNCVALUE4   ",
 "SYNCVALUE5   ",
@@ -67,7 +67,7 @@ const char * RegName[] = {
 "PACKETCONFIG2", 
 "AESKEY1      ",
 "AESKEY2      ",
-"AESKEY3      ",
+"AESKEY3      ",//40
 "AESKEY4      ",
 "AESKEY5      ",
 "AESKEY6      ",
@@ -83,9 +83,19 @@ const char * RegName[] = {
 "AESKEY16     ",
 "TEMP1        ",
 "TEMP2        ",
-"TESTPA1      ", 
+"             ",//50
+"             ",
+"             ",
+"             ",
+"             ",
+"             ",
+"             ",
+"             ",
+"TestLna      ",
+"TESTPA1      ",
 "TESTPA2      ", 
 "TESTDAGC     ",
+
 };
 
 byte RegList [] ={

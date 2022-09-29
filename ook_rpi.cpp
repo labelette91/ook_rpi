@@ -8,8 +8,8 @@ C code : test.cpp
 */
 
 #define OTIO_ENABLE
-#define  DOMOTIC
-#define REPORT_SERIAL
+//#define  DOMOTIC
+ #define REPORT_SERIAL
 
 
 #include <stdlib.h>
@@ -68,14 +68,15 @@ DecodeOTIO Otio(3);
 #endif
 
 //attention numeo general pin et pas GPIO
-#define TXPIN 5
-#define RXPIN 5
+int  TXPIN = 5;
+int   RXPIN = 5;
 
 #include "rfmPrint.cpp"
 
 int pin = 0;
 void PulseLed(int Level)
 {
+	return;
 	if (Level == 2)
 		pin = !pin;
 	else
@@ -108,11 +109,13 @@ void UpDatePulseCounter(int count )
 {
 	NbPulses += count;
 	CtMs += (SLEEP_TIME_IN_US/1000l);
-	if ((CtMs % 1000l) == 0)
+	if ((CtMs % 1000L) == 0)
 	{
 		NbPulse = NbPulses;
 		NbPulses = 0;
-		//fprintf(stdout, " NbPulse %d\n", NbPulse);
+		fprintf(stdout, " NbPulse %d\n", NbPulse);
+//		fprintf(stdout, "%d ", NbPulse);
+		fflush(stdout);
 		//			fprintf(stdout,"NbPulse %d\n", NbPulsePerSec);
 		//			easy->initPin();
 		//			easy->setSwitch(1, 0x55, 1);    // turn on device 0
@@ -133,12 +136,65 @@ void UpDatePulseCounter(int count )
 }
 std::string  createVirtualSerial(int &fd);
 
-int ook_rpi_read_drv( char * rxgpio, int debug)
+
+void readCom()
+{
+	char reg[10];
+	char val[10];
+	int Reg, Val;
+
+	byte nbCar = Serial.available();
+	while (nbCar != 0)
+	{
+		{
+			byte b = Serial.Read();
+			if (b == 'W')
+			{
+				reg[0] = Serial.Read();
+				reg[1] = Serial.Read();
+				reg[2] = 0;
+				val[0] = Serial.Read();
+				val[1] = Serial.Read();
+				val[2] = Serial.Read();
+
+				sscanf(reg, "%x", &Reg);
+				sscanf(val, "%x", &Val);
+
+				printf("write %d : %d\n",Reg,Val);
+
+				readListRegs(RegList);
+				radio->writeReg(Reg, Val);
+				PrintReg(Reg);
+
+
+			}
+			if (b == 'R')
+			{
+				reg[0] = Serial.Read();
+				reg[1] = Serial.Read();
+				reg[2] = 0;
+
+				sscanf(reg, "%x", &Reg);
+				PrintReg(Reg);
+
+
+			}
+
+
+			nbCar--;
+
+		}
+	}
+}
+
+int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 {
 	FILE* fp;
 	std::string Device;
 	std::string serial;
 	
+	RXPIN = rxPin;
+	TXPIN = txPin;
 
 	//power led sur gpio
 	system("echo gpio | sudo tee /sys/class/leds/led1/trigger");
@@ -148,7 +204,9 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 	//if receiver declared , init receive pin
 	if (RXPIN != -1) pinMode(RXPIN, INPUT);
 
-	Device = DeviceR + rxgpio ;
+		int rxGpio = wpiPinToGpio(rxPin);
+
+	Device = DeviceR + std::to_string(rxGpio) ;
 	printf("opening %s\n", Device.c_str() );
 
 	//open pulse driver
@@ -196,7 +254,10 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 			for (int i = 0; i < count; i++)
 			{
 				word p = pulse[i];
-				//printf("%d ", p);
+				printf("%d ", p);
+				if ((p % 16)==0)
+					printf("\n");
+					
 				//get pinData
 				int pinData = p & 1;
 
@@ -218,7 +279,7 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 					else
 					{
 #ifdef REPORT_SERIAL
-						Serial.println("Bad checksum");
+						Serial.print("\nBad checksum ");
 						reportSerial("OSV2", orscV2);
 #endif     
 					}
@@ -241,6 +302,7 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 
 
 		//read serial input & fill receive buffe(
+//		readCom();
 		DomoticReceive();
 		//check domotic send command reception
 		//attente une secone max pour emetre si emission en cours -80--> -70
@@ -342,14 +404,17 @@ int ook_rpi_read_drv( char * rxgpio, int debug)
 int main(int argc , char** argv)
 {
 	int debug = 0xff;
-	char* rxPin =(char*) "17";
+	int txPin = 5 ;
+	int rxPin = 5;
 	if (argc > 1)
-		rxPin = argv[1];
+		rxPin = atoi(argv[1]);
 	if (argc > 2)
-		debug = atoi(argv[2]);
+		txPin = atoi(argv[2]);
+	if (argc > 3)
+		debug = atoi(argv[3]);
 
-	printf("%s %d\n", rxPin,debug);
-	ook_rpi_read_drv(rxPin, debug);
+	printf("%d %d %d\n", rxPin,txPin,debug);
+	ook_rpi_read_drv(rxPin,txPin, debug);
 }
 
 #ifdef WIN32
