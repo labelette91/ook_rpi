@@ -132,7 +132,17 @@ void UpDatePulseCounter(int count )
 		lastrssi = rssi;
 		*/
 	}
-
+    //chaque sec
+	if ((CtMs % 1000L) == 0)
+	{
+		static int lastrssi=0;
+		int rssi = radio->readRSSI();
+		if (lastrssi != rssi) 
+		{
+			printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);
+		}
+		lastrssi = rssi;
+	}
 }
 std::string  createVirtualSerial(int &fd);
 
@@ -187,42 +197,51 @@ void readCom()
 	}
 }
 
-int ook_rpi_read_drv(int rxPin, int txPin , int debug)
+#define CHANGE 1
+#define FALLING 2
+#define RISING 3
+
+FILE* fp = 0 ;
+
+void attachInterrupt(uint8_t rxGpio , void * exint   , int mode)
 {
-	FILE* fp;
+
 	std::string Device;
-	std::string serial;
-	
-	RXPIN = rxPin;
-	TXPIN = txPin;
-
-	//power led sur gpio
-	//system("echo gpio | sudo tee /sys/class/leds/led1/trigger");
-
-	if (wiringPiSetup() == -1)	{printf("[ERROR] failed to initialize wiring pi");exit(1);	}
-
-	//if receiver declared , init receive pin
-	if (RXPIN != -1) pinMode(RXPIN, INPUT);
-
-		int rxGpio = wpiPinToGpio(rxPin);
-
 	Device = DeviceR + std::to_string(rxGpio) ;
 	printf("opening %s\n", Device.c_str() );
+
+    if (fp !=0)
+        fclose(fp);
 
 	//open pulse driver
 	fp = fopen(Device.c_str(), "r");
 	if (fp == NULL) {printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());		/*exit(1);*/ 	}
+}
+void detachInterrupt(uint8_t intNumber)
+{
+    fclose(fp);
+//				fp = fopen(Device.c_str(), "w");
+//				if (fp == NULL) {printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
 
-	//create virtual tty
-	Serial.out = fileno(stdout);
-	serial = createVirtualSerial(Serial.DomoticOut);
+}
+
+void  Setup(int rxPin, int txPin , int ledpin)
+{
+
+}
+int ook_rpi_read_drv(int rxPin, int txPin , int debug)
+{
+
+	RXPIN = rxPin;
+	TXPIN = txPin;
+
+	//if receiver declared , init receive pin
+	if (RXPIN != -1) pinMode(RXPIN, INPUT);
+
+    attachInterrupt(wpiPinToGpio(rxPin) , 0,  CHANGE );
 
 	easy = new HomeEasyTransmitter(TXPIN, 0);
 	HagerSetPin                   (TXPIN, 0);
-
-	//init SPI
-	if (SPI.Setup(SPI_CHAN, Spi_speed))
-		printf( "failed to open the SPI bus: ");
 
 	//init radio module RFF
 	radio = new RFM69(0, 0);
@@ -230,6 +249,15 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 		printf( "HERF: RFM69 initialized TX:%d RX:%d\n", TXPIN, RXPIN);
 	else
 		printf("HERF: RFM69 not initialized \n", TXPIN, RXPIN);
+
+    //2400 bauds bit rate 3,4
+//    radio->writeReg(REG_BITRATEMSB,RF_BITRATEMSB_2400);
+//    radio->writeReg(REG_BITRATELSB,RF_BITRATELSB_2400);
+    //lna 50 h mieux que 200   
+//    radio->writeReg(REG_LNA, RF_LNA_ZIN_50);
+//    radio->writeReg(REG_LNA, RF_LNA_ZIN_200);
+
+
 
 	if (RXPIN != -1) pinMode(RXPIN, INPUT);
 
@@ -334,13 +362,12 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 			else
 			{
 
-				fclose(fp);
 //				fp = fopen(Device.c_str(), "w");
 //				if (fp == NULL) {printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
 
 				rssi = radio->readRSSI();
 
-//				detachInterrupt(1);
+				detachInterrupt(1);
 				easy->initPin();
 				radio->setMode(RF69_MODE_TX);
 				delay(10);
@@ -376,19 +403,10 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 				Cmd.LIGHTING2.id4 = NbPulse & 0x00ff;
 				Serial.Write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
 
-//				attachInterrupt(1, ext_int_1, CHANGE);
+				attachInterrupt(wpiPinToGpio(rxPin), 0 , CHANGE);
 				radio->setMode(RF69_MODE_RX);
 				PrintReg(REG_OPMODE);
 				pinMode(TXPIN, INPUT);
-
-				//open pulse driver
-				fp = fopen(Device.c_str(), "r");
-				if (fp == NULL) {
-					printf("[ERROR] reopen  %s device not found - kernel driver must be started !!\n", Device.c_str());
-					//exit(1);
-				}
-
-
 			}
 			PulseLed(0);
 			DomoticPacketReceived = false;
@@ -412,6 +430,22 @@ int main(int argc , char** argv)
 		debug = atoi(argv[3]);
 
 	printf("%d %d %d\n", rxPin,txPin,debug);
+
+	//power led sur gpio
+	//system("echo gpio | sudo tee /sys/class/leds/led1/trigger");
+
+	if (wiringPiSetup() == -1)	{printf("[ERROR] failed to initialize wiring pi");exit(1);	}
+
+	//create virtual tty
+	Serial.out = fileno(stdout);
+	std::string serial;
+	serial = createVirtualSerial(Serial.DomoticOut);
+	printf("create virtual serial %S \n", serial.c_str());
+
+	//init SPI
+	if (SPI.Setup(SPI_CHAN, Spi_speed))
+		printf( "failed to open the SPI bus: ");
+
 	ook_rpi_read_drv(rxPin,txPin, debug);
 }
 
