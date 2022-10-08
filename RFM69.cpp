@@ -54,8 +54,8 @@ bool RFM69::initialize(byte freqBand, byte nodeID, byte networkID)
   {
     /* 0x01 */ { REG_OPMODE, RF_OPMODE_SEQUENCER_ON | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY },
     /* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00 }, //no shaping
-    /* 0x03 */ { REG_BITRATEMSB, RF_BITRATEMSB_1024}, //default:1024: nou used 
-    /* 0x04 */ { REG_BITRATELSB, RF_BITRATEMSB_1024},
+    /* 0x03 */ { REG_BITRATEMSB, RF_BITRATEMSB_4800}, //default:1024: nou used 
+    /* 0x04 */ { REG_BITRATELSB, RF_BITRATELSB_4800},
     /* 0x05 */ { REG_FDEVMSB, RF_FDEVMSB_50000}, //default:5khz, (FDEV + BitRate/2 <= 500Khz)
     /* 0x06 */ { REG_FDEVLSB, RF_FDEVLSB_50000}, //not used in OOPK
 
@@ -71,8 +71,9 @@ bool RFM69::initialize(byte freqBand, byte nodeID, byte networkID)
     ///* 0x11 */ { REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | RF_PALEVEL_OUTPUTPOWER_11111},
     ///* 0x13 */ { REG_OCP, RF_OCP_ON | RF_OCP_TRIM_95 }, //over current protection (default is 95mA)
     
-    /* 0x18*/ { REG_LNA,  RF_LNA_ZIN_200  }, //gain Auto ADC + 200 Ohm //as suggested by mav here: http://lowpowerlab.com/forum/index.php/topic,296.msg1571.html
-    
+    /* 0x18*/ { REG_LNA,  RF_LNA_ZIN_50   }, //gain Auto ADC + 50  Ohm //as suggested by mav here: http://lowpowerlab.com/forum/index.php/topic,296.msg1571.html
+//	/* 0x18*/ { REG_LNA,  RF_LNA_ZIN_200  }, //gain Auto ADC + 200 Ohm //as suggested by mav here: http://lowpowerlab.com/forum/index.php/topic,296.msg1571.html
+
     // RXBW defaults are { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_5} (RxBw: 10.4khz)
     /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_20 | RF_RXBW_EXP_1 }, //(BitRate < 2 * RxBw)
     ///* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_7 }, //  = 1,3 Khz (BitRate < 2 * RxBw)
@@ -82,8 +83,8 @@ bool RFM69::initialize(byte freqBand, byte nodeID, byte networkID)
 
     
     /* 0x25 */ { REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00 }, 
-    ///* 0x29 */ { REG_RSSITHRESH, 35 }, //must be set to dBm = (-Sensitivity / 2) - default is 0xE4=228 so -114dBm
-    /* 0x29 */ { REG_RSSITHRESH, 0xE4 }, //must be set to dBm = (-Sensitivity / 2) - default is 0xE4=228 so -114dBm
+    /* 0x29 */ { REG_RSSITHRESH, 228 }, //must be set to dBm = (-Sensitivity / 2) - default is 0xE4=228 so -114dBm
+    ///* 0x29 */ { REG_RSSITHRESH, 0xE4 }, //must be set to dBm = (-Sensitivity / 2) - default is 0xE4=228 so -114dBm
 //    /* 0x2d */ { REG_PREAMBLELSB, 8 } // default 8 preamble bytes 0xAAAAAAAA
 //    /* 0x2e */ { REG_SYNCCONFIG, RF_SYNC_ON | RF_SYNC_FIFOFILL_AUTO | RF_SYNC_SIZE_2 | RF_SYNC_TOL_0 },
 //    /* 0x2f */ { REG_SYNCVALUE1, 0x2D },      //attempt to make this compatible with sync1 byte of RFM12B lib
@@ -166,6 +167,8 @@ void RFM69::setMode(byte newMode)
 	while ( ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00) && (i--!=0) )
 	{
 	}; // Wait for ModeReady
+	Serial.print("READY:");
+	Serial.println(MAX_WAIT-i);
 
 	_mode = newMode;
 }

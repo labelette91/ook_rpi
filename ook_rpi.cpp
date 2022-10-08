@@ -109,9 +109,9 @@ void UpDatePulseCounter(int count )
 {
 	NbPulses += count;
 	CtMs += (SLEEP_TIME_IN_US/1000l);
-	if ((CtMs % 1000L) == 0)
+	if ((CtMs % 10000L) == 0)
 	{
-		NbPulse = NbPulses;
+		NbPulse = NbPulses / 10 ;
 		NbPulses = 0;
 		fprintf(stdout, " NbPulse %d\n", NbPulse);
 //		fprintf(stdout, "%d ", NbPulse);
@@ -254,9 +254,7 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 			for (int i = 0; i < count; i++)
 			{
 				word p = pulse[i];
-				printf("%d ", p);
-				if ((p % 16)==0)
-					printf("\n");
+				//printf("%d ", p);				if ((p % 16)==0)					printf("\n");
 					
 				//get pinData
 				int pinData = p & 1;
