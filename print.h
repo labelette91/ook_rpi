@@ -15,6 +15,16 @@
 
 int serialAvailable(int fd);
 
+static int writestd(int fildes, const void *buf, int nbytes)
+{
+    return  write( fildes, buf,  nbytes);
+}
+
+static int readstd(int fildes, void *buf, int nbytes)
+{
+return read(fildes, buf, nbytes);
+}
+
 
 class Print
 {
@@ -42,12 +52,12 @@ class Print
 	}
 
 
-	static int Write(void* pbuffer, int size) {
+	static int write(void* pbuffer, int size) {
 		uint8_t* buffer = (uint8_t*)pbuffer;
 		//log ascii
 		//dprintf(out, "WR:");for (int i = 0; i < size; i++) dprintf(out, "%02X", buffer[i] ); dprintf(out, "\n");
 		
-		int err = write(DomoticOut, pbuffer, size );
+		int err = writestd(DomoticOut, pbuffer, size );
 		if (err <= 0)
 		{
 			printf("error %d writing TTY : %d \n", err, strerror(errno));
@@ -82,23 +92,33 @@ class Print
 //		if (nb) dprintf(out, "NB:%d ", nb );
 		return nb;
 	}
-	static char Read() 
+	static char read() 
 	{ 
 		char inputbyte;
-		read(DomoticOut, &inputbyte, 1);
+		readstd(DomoticOut, &inputbyte, 1);
 //		dprintf(out, "%02X ", inputbyte);
 
 		return inputbyte ;
 	}
 
-	static int Read(void* const pbuffer, unsigned const buffer_size)
+	static int read(void* const pbuffer, unsigned const buffer_size)
 	{
-		int psize = read(DomoticOut, pbuffer, buffer_size);
+		int psize = readstd(DomoticOut, pbuffer, buffer_size);
 		char* buffer = (char*)pbuffer;
 //		for (int i = 0; i < psize; i++) dprintf(out, "%02X", buffer[i]); dprintf(out, "\n");
 
 		return psize;
 	}
+
+static char Read() 
+	{ 
+		char inputbyte;
+		readstd(out, &inputbyte, 1);
+//		dprintf(out, "%02X ", inputbyte);
+
+		return inputbyte ;
+	}
+
 };
 
 

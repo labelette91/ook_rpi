@@ -129,7 +129,7 @@ char* pts_name = ptsname(fd);
 std::cerr << "ptsname: " << pts_name << std::endl;
 
 std::string devSerial = createSerialLink(pts_name);
-std::cerr << "ptsname: " << devSerial << std::endl;
+std::cerr << "SerialName: " << devSerial << std::endl;
 
 	/* serial port parameters */
 	struct termios newtio;

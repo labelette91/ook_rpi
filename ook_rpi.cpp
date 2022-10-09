@@ -8,7 +8,7 @@ C code : test.cpp
 */
 
 #define OTIO_ENABLE
-//#define  DOMOTIC
+#define  DOMOTIC
  #define REPORT_SERIAL
 
 

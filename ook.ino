@@ -254,7 +254,7 @@ void Loop(word p)
 				Cmd.LIGHTING2.id2 = rssi & 0x00ff;
 				Cmd.LIGHTING2.id3 = NbPulse >> 8;
 				Cmd.LIGHTING2.id4 = NbPulse & 0x00ff;
-				Serial.Write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
+				Serial.write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
 
 				attachInterrupt(wpiPinToGpio(RXPIN), 0 , CHANGE);
 				radio->setMode(RF69_MODE_RX);
