@@ -113,31 +113,18 @@ void UpDatePulseCounter(int count )
 	{
 		NbPulse = NbPulses / 10 ;
 		NbPulses = 0;
-		fprintf(stdout, " NbPulse %d\n", NbPulse);
-//		fprintf(stdout, "%d ", NbPulse);
+//		fprintf(stdout, " NbPulse %d\n", NbPulse);
 		fflush(stdout);
 		//			fprintf(stdout,"NbPulse %d\n", NbPulsePerSec);
 		//			easy->initPin();
 		//			easy->setSwitch(1, 0x55, 1);    // turn on device 0
-		static int lastrssi=0;
-
-		/*
-		
-		int rssi = radio->readRSSI();
-		if (lastrssi != rssi) 
-		{
-			printf("rssi:%d ", rssi);
-			fprintf(stdout, " NbPulse %d\n", NbPulse);
-		}
-		lastrssi = rssi;
-		*/
 	}
     //chaque sec
 	if ((CtMs % 1000L) == 0)
 	{
 		static int lastrssi=0;
 		int rssi = radio->readRSSI();
-		if (lastrssi != rssi) 
+		if ( abs(lastrssi - rssi) > 1 )
 		{
 			printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);
 		}
@@ -227,11 +214,6 @@ void detachInterrupt(uint8_t intNumber)
 
 void  Setup(int rxPin, int txPin , int ledpin)
 {
-
-}
-int ook_rpi_read_drv(int rxPin, int txPin , int debug)
-{
-
 	RXPIN = rxPin;
 	TXPIN = txPin;
 
@@ -272,16 +254,12 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 
 	DomoticInit();
 
-	printf("running\n" );
-	while (1) {
-		int count = 0;
-		count = fread(pulse, 4, 2048, fp);
-		UpDatePulseCounter(count);
-		if (count > 0)
+}
+void Loop(word p)
+{
 		{
-			for (int i = 0; i < count; i++)
-			{
-				word p = pulse[i];
+			if (p>0)
+            {
 				//printf("%d ", p);				if ((p % 16)==0)					printf("\n");
 					
 				//get pinData
@@ -326,8 +304,6 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 			}
 		}
 
-
-		//read serial input & fill receive buffe(
 //		readCom();
 		DomoticReceive();
 		//check domotic send command reception
@@ -361,9 +337,6 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 			}
 			else
 			{
-
-//				fp = fopen(Device.c_str(), "w");
-//				if (fp == NULL) {printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
 
 				rssi = radio->readRSSI();
 
@@ -403,7 +376,7 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 				Cmd.LIGHTING2.id4 = NbPulse & 0x00ff;
 				Serial.Write((byte*)&Cmd.LIGHTING2, Cmd.LIGHTING2.packetlength + 1);
 
-				attachInterrupt(wpiPinToGpio(rxPin), 0 , CHANGE);
+				attachInterrupt(wpiPinToGpio(RXPIN), 0 , CHANGE);
 				radio->setMode(RF69_MODE_RX);
 				PrintReg(REG_OPMODE);
 				pinMode(TXPIN, INPUT);
@@ -411,6 +384,29 @@ int ook_rpi_read_drv(int rxPin, int txPin , int debug)
 			PulseLed(0);
 			DomoticPacketReceived = false;
 		}
+}
+
+
+int ook_rpi_read_drv(int rxPin, int txPin , int ledpin)
+{
+
+    Setup( rxPin,  txPin , ledpin);
+
+	printf("running\n" );
+	while (1) {
+		int count = 0;
+		count = fread(pulse, 4, 2048, fp);
+		UpDatePulseCounter(count);
+		if (count > 0)
+		{
+			for (int i = 0; i < count; i++)
+			{
+                Loop(pulse[i] );
+			}
+		}
+        else
+            Loop(0 );
+
 		usleep(SLEEP_TIME_IN_US);
 	}
 	fclose(fp);
