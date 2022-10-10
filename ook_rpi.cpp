@@ -7,9 +7,6 @@ C code : test.cpp
 * ===================================================
 */
 
-#define OTIO_ENABLE
-#define  DOMOTIC
- #define REPORT_SERIAL
 
 
 #include <stdlib.h>
@@ -35,6 +32,8 @@ std::string DeviceR = "/dev/gpiofreq";
 int Print::out;
 int Print::DomoticOut;
 
+Print Serial ;
+
 #define MAXS 4096
 int pulse[MAXS];
 
@@ -51,11 +50,14 @@ std::string  createVirtualSerial(int &fd);
 
 FILE* fp = 0 ;
 
-void attachInterrupt(uint8_t rxGpio , void * exint   , int mode)
+//rxPin = numero gpio wiring pi
+void attachInterrupt(uint8_t rxGpio, void (*)(void), int mode)
+
 {
 
 	std::string Device;
-	Device = DeviceR + std::to_string(rxGpio) ;
+    int rxBcmPin = wpiPinToGpio(rxGpio);
+	Device = DeviceR + std::to_string(rxBcmPin) ;
 	printf("opening %s\n", Device.c_str() );
 
     if (fp !=0)
@@ -73,7 +75,8 @@ void detachInterrupt(uint8_t intNumber)
 
 }
 
-#include "ook.ino"
+//#include "ook.ino"
+#include "../Arduino/Ook_OSV12/Ook_OSV12.ino"
 
 void readCom()
 {
@@ -101,7 +104,7 @@ void readCom()
 				printf("write %d : %d\n",Reg,Val);
 
 				readListRegs(RegList);
-				radio->writeReg(Reg, Val);
+				radio.writeReg(Reg, Val);
 				PrintReg(Reg);
 
 
@@ -127,6 +130,9 @@ void readCom()
 
 void UpDatePulseCounter(int count )
 {
+    static int NbPulses=0;
+    static int NbPulse =0;
+
 	NbPulses += count;
 	CtMs += (SLEEP_TIME_IN_US/1000l);
 	if ((CtMs % 10000L) == 0)
@@ -143,7 +149,7 @@ void UpDatePulseCounter(int count )
 	if ((CtMs % 1000L) == 0)
 	{
 		static int lastrssi=0;
-		int rssi = radio->readRSSI();
+		int rssi = radio.readRSSI();
 		if ( abs(lastrssi - rssi) > 2 )
 		{
 			printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);

@@ -66,6 +66,12 @@ class Print
 
 		return size;
 	}
+	static int write(char c ) {
+		//log ascii
+		dprintf(out, "%c",c);
+
+		return 1 ;
+	}
 
 
     static int print(const char mes [] )                     {return dprintf(out, "%s",mes) ; };
@@ -118,6 +124,7 @@ static char Read()
 
 		return inputbyte ;
 	}
+    void begin(long){ };
 
 };
 

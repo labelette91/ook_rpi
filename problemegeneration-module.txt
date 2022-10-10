@@ -1,0 +1,32 @@
+il fau installer les dernier header :
+apt update
+apt upgrade 
+sudo reboot
+sudo apt install raspberrypi-kernel-headers
+cela install les header dans /lib/modules/(uname -r)
+uname -r donne la version : 5.10.103-v7+ : buster
+
+en suite modifier le make file :SUBDIRS par M
+
+#	${MAKE} -C ${KERNEL_DIR} SUBDIRS=${MODULE_DIR}  modules
+	${MAKE} -C ${KERNEL_DIR} M=${MODULE_DIR}  modules
+	
+	
+ensuite : sudo make genere des erreur : sur struct timespec.
+Elle esy obsolette.
+il faut remplacer par :
+ktime_t  timestamp, delta ;
+
+	timestamp = ktime_get(); --> read temps en ns
+	delta = ktime_sub_ns(timestamp, data->last_timestamp); --> soustrait
+	ns = ktime_to_us(delta); --> converti en micros
+
+le device creer recoit le numero de PIN BCM en parametre : 
+les device creer sont /dev/gpiofreqPIN.
+ce n'est pas le GPIO Numero
+17 = 0
+23 = 4
+24 = 5 
+
+pour la carte RFM connecter sur le GPIO 5 : cest le /dev/gpiofreq24
+ 

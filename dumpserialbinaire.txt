@@ -1,0 +1,2 @@
+cat /dev/serial2 | hexdump -v -e '/1 "%02X "' -e '/1 "%c\n"'
+od -x < /dev/ttyS1
