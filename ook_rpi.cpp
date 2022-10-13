@@ -128,10 +128,12 @@ void readCom()
 	}
 }
 
+    static int NbPulses=0;
 void UpDatePulseCounter(int count )
 {
-    static int NbPulses=0;
     static int NbPulse =0;
+    static int rssiCumul   =0;
+    static int rssiMin  =0;
 
 	NbPulses += count;
 	CtMs += (SLEEP_TIME_IN_US/1000l);
@@ -152,15 +154,24 @@ void UpDatePulseCounter(int count )
 		int rssi = radio.readRSSI();
 		if ( abs(lastrssi - rssi) > 2 )
 		{
-			printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);
+//			printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);
 		}
 		lastrssi = rssi;
+        rssiCumul += rssi;
+	}
+    //chaque min
+	if ((CtMs % (1000L*60)) == 0)
+	{
+        rssiMin = rssiCumul / 60 ;
+		{
+			printf("rssi:%d NbPulse %d %d\n", rssiMin, NbPulse );
+		}
+        rssiCumul = 0 ;
 	}
 }
 
 int ook_rpi_read_drv(int rxPin, int txPin , int ledpin)
 {
-
     Setup( rxPin,  txPin , ledpin);
 
 	printf("running\n" );
@@ -172,6 +183,12 @@ int ook_rpi_read_drv(int rxPin, int txPin , int ledpin)
 		{
 			for (int i = 0; i < count; i++)
 			{
+#if 0 
+                static int nbpulses = 0;
+                printf("%d,", pulse[i]);
+                if ((nbpulses++ % 16)==0)
+                    printf("\n" );
+#endif
                 Loop(pulse[i] );
 			}
 		}

@@ -1,10 +1,11 @@
 //type de report serie 
 //si = define  : report serial forma domoticz (binaire)
-#define REPORT_TYPE  REPORT_DOMOTIC
+//#define REPORT_TYPE  REPORT_DOMOTIC 
+#define REPORT_TYPE  ( REPORT_DOMOTIC | SERIAL_DEBUG )
 
 //si =  : report serial format text 
 //#define REPORT_TYPE REPORT_SERIAL 
-#define REPORT_TYPE SERIAL_DEBUG 
+//#define REPORT_TYPE SERIAL_DEBUG 
 
 #define RFM69_ENABLE
 //#define  BMP180_ENABLE        
