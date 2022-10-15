@@ -119,17 +119,17 @@ fd = 0;
 
 fd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
 if (fd == -1) {
-	std::cerr << "error opening file" << std::endl;
+//	std::cerr << "error opening file" << std::endl;
 	return "";
 }
 grantpt(fd);
 unlockpt(fd);
 
 char* pts_name = ptsname(fd);
-std::cerr << "ptsname: " << pts_name << std::endl;
+//std::cerr << "ptsname: " << pts_name << std::endl;
 
 std::string devSerial = createSerialLink(pts_name);
-std::cerr << "SerialName: " << devSerial << std::endl;
+//std::cerr << "SerialName: " << devSerial << std::endl;
 
 	/* serial port parameters */
 	struct termios newtio;

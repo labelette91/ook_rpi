@@ -4,6 +4,7 @@
 
 #include <stdio.h> // for int
 #include <string.h> // for int
+#include <stdarg.h>
 
 #include "deftype.h"
 #include <unistd.h>
@@ -91,6 +92,17 @@ class Print
     static int println(unsigned long mes , int base  = DEC)  {return PRINT(mes,base,true) ; };   
     static int println(double mes , int base = 2)            {return dprintf(out, "%f\n",mes) ; };
     static int println(void)								 {return dprintf(out, "\n") ; };
+
+    static int printf(const char *fmt,...)
+    {
+        va_list argList;
+        char cbuffer[1024];
+        va_start(argList, fmt);
+        int nb = vsnprintf(cbuffer, sizeof(cbuffer), fmt, argList);
+        va_end(argList);
+        print(cbuffer);
+        return nb;
+    };
 
 	static int available() 
 	{ 

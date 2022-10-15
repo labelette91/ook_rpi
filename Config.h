@@ -1,7 +1,8 @@
 //type de report serie 
 //si = define  : report serial forma domoticz (binaire)
 //#define REPORT_TYPE  REPORT_DOMOTIC 
-#define REPORT_TYPE  ( REPORT_DOMOTIC | SERIAL_DEBUG )
+//#define REPORT_TYPE  ( REPORT_DOMOTIC | SERIAL_DEBUG )
+#define REPORT_TYPE  ( SERIAL_DEBUG )
 
 //si =  : report serial format text 
 //#define REPORT_TYPE REPORT_SERIAL 
@@ -21,3 +22,6 @@
 #define  RAIN_ENABLE        
 
 #define RASPBERRY_PI
+
+//offset in micros for pulse duration for RFM69 : 80Micros
+#define OFFSET_DURATION_HIGH 80

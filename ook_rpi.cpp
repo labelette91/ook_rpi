@@ -17,6 +17,8 @@ C code : test.cpp
 #include <sched.h>    
 #include <wiringPi.h>
 #include "print.h"
+#include  "reportSerial.h"
+#include "Config.h"
 
 //rfm69 and spi *************************		
 
@@ -58,20 +60,20 @@ void attachInterrupt(uint8_t rxGpio, void (*)(void), int mode)
 	std::string Device;
     int rxBcmPin = wpiPinToGpio(rxGpio);
 	Device = DeviceR + std::to_string(rxBcmPin) ;
-	printf("opening %s\n", Device.c_str() );
+	Serial.printf("opening %s\n", Device.c_str() );
 
     if (fp !=0)
         fclose(fp);
 
 	//open pulse driver
 	fp = fopen(Device.c_str(), "r");
-	if (fp == NULL) {printf("[ERROR] %s device not found - kernel driver must be started !!\n", Device.c_str());		/*exit(1);*/ 	}
+	if (fp == NULL) {Serial.printf("[ERROR] %s device not found - kernel driver must be started or already running !!\n", Device.c_str());		exit(1); 	}
 }
 void detachInterrupt(uint8_t intNumber)
 {
     fclose(fp);
 //				fp = fopen(Device.c_str(), "w");
-//				if (fp == NULL) {printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
+//				if (fp == NULL) {Serial.printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
 
 }
 
@@ -101,7 +103,7 @@ void readCom()
 				sscanf(reg, "%x", &Reg);
 				sscanf(val, "%x", &Val);
 
-				printf("write %d : %d\n",Reg,Val);
+				Serial.printf("write %d : %d\n",Reg,Val);
 
 				readListRegs(RegList);
 				radio.writeReg(Reg, Val);
@@ -128,7 +130,9 @@ void readCom()
 	}
 }
 
-    static int NbPulses=0;
+static int NbPulses=0;
+static int DumpPulse = 0 ;
+
 void UpDatePulseCounter(int count )
 {
     static int NbPulse =0;
@@ -154,7 +158,7 @@ void UpDatePulseCounter(int count )
 		int rssi = radio.readRSSI();
 		if ( abs(lastrssi - rssi) > 2 )
 		{
-//			printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);
+//			Serial.printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);
 		}
 		lastrssi = rssi;
         rssiCumul += rssi;
@@ -164,17 +168,18 @@ void UpDatePulseCounter(int count )
 	{
         rssiMin = rssiCumul / 60 ;
 		{
-			printf("rssi:%d NbPulse %d %d\n", rssiMin, NbPulse );
+			Serial.printf("rssi:%d NbPulse %d %d\n", rssiMin, NbPulse );
 		}
         rssiCumul = 0 ;
 	}
 }
 
-int ook_rpi_read_drv(int rxPin, int txPin , int ledpin)
+int ook_rpi_read_drv(int rxPin, int txPin , int ledpin, int reportType ,  int dumpPulse )
 {
+    setReportType(reportType);
     Setup( rxPin,  txPin , ledpin);
 
-	printf("running\n" );
+	Serial.printf("running\n" );
 	while (1) {
 		int count = 0;
 		count = fread(pulse, 4, 2048, fp);
@@ -183,12 +188,13 @@ int ook_rpi_read_drv(int rxPin, int txPin , int ledpin)
 		{
 			for (int i = 0; i < count; i++)
 			{
-#if 0 
-                static int nbpulses = 0;
-                printf("%d,", pulse[i]);
-                if ((nbpulses++ % 16)==0)
-                    printf("\n" );
-#endif
+                if(DumpPulse) 
+                {
+                    static int nbpulses = 0;
+                    Serial.printf("%d,", pulse[i]);
+                    if ((nbpulses++ % 16)==0)
+                        Serial.printf("\n" );
+                }
                 Loop(pulse[i] );
 			}
 		}
@@ -204,33 +210,86 @@ int ook_rpi_read_drv(int rxPin, int txPin , int ledpin)
 int main(int argc , char** argv)
 {
 	int debug = 0xff;
+    int reportType = 0 ;
 	int txPin = 5 ;
 	int rxPin = 5;
-	if (argc > 1)
-		rxPin = atoi(argv[1]);
-	if (argc > 2)
-		txPin = atoi(argv[2]);
-	if (argc > 3)
-		debug = atoi(argv[3]);
 
-	printf("%d %d %d\n", rxPin,txPin,debug);
+    int iarg = 0 ;
+    std::string sreportType = "";
+    FILE* fout;
+
+    Serial.out = fileno(stdout);
+    for (iarg = 1 ; iarg<argc;)
+    {
+        char  swc   = argv[iarg++][1] ;
+        char* copt  = argv[iarg++]   ;
+
+        switch (swc)
+        {
+            //-tx 5
+        case 't' :
+                txPin = atoi(copt);
+            break;
+            //-rx 5
+        case 'r' :
+                rxPin = atoi(copt);
+            break;
+
+            //-output  [serial domotic  verbose]
+        case 'o' :
+                if (copt[0] == 's')       { reportType += REPORT_SERIAL  ;  /* sreportType += "SERIAL " ; */ }
+                else  if (copt[0] == 'd') { reportType += REPORT_DOMOTIC ;  /* sreportType += "DOMOTIC "; */ }
+                else if (copt[0] == 'v')  { reportType += SERIAL_DEBUG   ;  /* sreportType += "DEBUG "  ; */ }
+                else
+                    Serial.printf("invalid option : output  [serial domotic  verbose] \n");
+            break;
+            //-dump [0 1] 
+        case 'd' :
+                DumpPulse = atoi(copt);
+            break;
+        case 'f' :
+             fout = fopen(copt,"w");  
+             if (fout <=0){
+                 Serial.printf("error open file %s\n",copt);
+             }
+             else
+                 Serial.out = fileno(fout);
+            break;
+        default :
+                    Serial.printf("invalid option : %c\n", swc );
+            break;
+
+        }
+    }
+    Serial.printf(" -tx 5 -rx 5 -output  [serial domotic  verbose] -dump [0 1] -file ook.log\n");
+
+    if ( reportType == 0 )
+            reportType = REPORT_TYPE;
+     if ( reportType & REPORT_SERIAL  )  sreportType += "SERIAL "; 
+     if ( reportType & REPORT_DOMOTIC )  sreportType += "DOMOTIC ";
+     if ( reportType & SERIAL_DEBUG   )  sreportType += "DEBUG " ; 
+
+	Serial.printf("rxPin:%d txPin:%d dumpPulse :%d reportType:%d = %s\n", rxPin,txPin, DumpPulse , reportType , sreportType.c_str());
 
 	//power led sur gpio
 	//system("echo gpio | sudo tee /sys/class/leds/led1/trigger");
 
-	if (wiringPiSetup() == -1)	{printf("[ERROR] failed to initialize wiring pi");exit(1);	}
+	if (wiringPiSetup() == -1)	{Serial.printf("[ERROR] failed to initialize wiring pi");exit(1);	}
 
 	//create virtual tty
-	Serial.out = fileno(stdout);
+	
 	std::string serial;
 	serial = createVirtualSerial(Serial.DomoticOut);
-	printf("create virtual serial %S \n", serial.c_str());
+    if (serial.size())
+	    Serial.printf("create virtual serial %s \n", serial.c_str());
+    else
+	    Serial.printf("error opening virtual serial \n");
 
 	//init SPI
 	if (SPI.Setup(SPI_CHAN, Spi_speed))
-		printf( "failed to open the SPI bus: ");
+		Serial.printf( "failed to open the SPI bus: ");
 
-	ook_rpi_read_drv(rxPin,txPin, debug);
+	ook_rpi_read_drv(rxPin,txPin, 0, reportType,  dumpPulse);
 }
 
 #ifdef WIN32
