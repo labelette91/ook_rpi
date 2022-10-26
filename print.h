@@ -61,7 +61,7 @@ class Print
 		int err = writestd(DomoticOut, pbuffer, size );
 		if (err <= 0)
 		{
-			printf("error %d writing TTY : %d \n", err, strerror(errno));
+			dprintf(out,"error %d writing TTY : %d \n", err, strerror(errno));
 		}
 	
 

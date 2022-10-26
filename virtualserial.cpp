@@ -49,6 +49,10 @@ std::string readLink(std::string linkName)
       	link = std::string (buf);
 return link;      	
 }
+//find if a serial link exist pointed to ptsX
+// return 2 = link already exist
+// return 0 = link already exist but point on another ptsName
+// 1        = link not exits
 
 int findSerial(std::string serial , std::string ptsX )
 {
@@ -104,7 +108,7 @@ std::string  createSerialLink(std::string ptsserial )
 				  std::string cmd =  "sudo ln -s " +  ptsserial + " " + serial  ;			
 				  //system("ls -lh >/dev/null 2>&1"); 
 				  int err = system(cmd.c_str() ); 
-  				printf("create link  %s %s : %d\n", ptsserial.c_str() ,serial.c_str() , err);
+  				//printf("create link  %s %s : %d\n", ptsserial.c_str() ,serial.c_str() , err);
 				  
 			}	
 			return serial;
@@ -117,7 +121,7 @@ std::string createVirtualSerial(int &fd )
 {
 fd = 0;
 
-fd = open("/dev/ptmx", O_RDWR | O_NOCTTY);
+fd = open("/dev/ptmx", O_RDWR | O_NOCTTY | O_NONBLOCK );
 if (fd == -1) {
 //	std::cerr << "error opening file" << std::endl;
 	return "";
