@@ -166,6 +166,7 @@
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Config.h" />
     <ClInclude Include="decodeotio.h" />
     <ClInclude Include="deftype.h" />
     <ClInclude Include="domotic.h" />

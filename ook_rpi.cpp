@@ -133,11 +133,12 @@ void readCom()
 static int NbPulses=0;
 static int DumpPulse = 0 ;
 
+static int rssiCumul   =0;
+static int rssiMin  =0;
+
 void UpDatePulseCounter(int count )
 {
     static int NbPulse =0;
-    static int rssiCumul   =0;
-    static int rssiMin  =0;
 
 	NbPulses += count;
 	CtMs += (SLEEP_TIME_IN_US/1000l);
@@ -172,6 +173,13 @@ void UpDatePulseCounter(int count )
 		}
         rssiCumul = 0 ;
 	}
+}
+
+int rssiGetAverage()
+{
+#ifdef RFM69_ENABLE
+      return (rssiMin);
+#endif
 }
 
 int ook_rpi_read_drv(int rxPin, int txPin , int ledpin, int reportType ,  int dumpPulse )
