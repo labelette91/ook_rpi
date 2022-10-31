@@ -31,5 +31,10 @@ clean:
 unload:
 	sudo rmmod gpio-freq.ko
 		
+load:
+	sudo rmmod gpio-freq.ko
+	sudo insmod /home/pi/rfrpi_src/gpio-freq/gpio-freq.ko gpios=16,22,23,17,24
+	sudo chown pi /dev/gpiofreq*
+	lsmod | grep gpio_freq
 
 endif

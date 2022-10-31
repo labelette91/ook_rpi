@@ -6,7 +6,8 @@ WPI_DIR = /tmp
 OOK = ../Arduino/Ook_OSV12
 LIB = ../Arduino/libraries
 
-INC = -I/usr/local/include  -I$(OOK) -I . -I $(LIB)/DecodeOOK -I $(LIB)/tfa
+#INC = -I/usr/local/include  -I$(OOK) -I . -I $(LIB)/DecodeOOK -I $(LIB)/tfa
+INC = -I/usr/local/include  -I$(OOK) -I . 
 
 TRFLAGS = -DTRACECORE433 -DTRACEEVENTMNG -DTRACESINGLETON 
 NOTUSEDTRFLAGS = -DTRACE_RCOOK -DSENSORDEBUG 
