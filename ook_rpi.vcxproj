@@ -153,8 +153,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\rfrpi_src\gpio-freq\gpio-freq.c" />
-    <ClCompile Include="Domotic.cpp" />
+    <ClCompile Include=".\gpio-freq\gpio-freq.c" />
+    <ClCompile Include="..\Arduino\Ook_OSV12\Domotic.cpp" />
     <ClCompile Include="hager.cpp" />
     <ClCompile Include="HomeEasyTransmitter.cpp" />
     <ClCompile Include="ook_rpi.cpp" />

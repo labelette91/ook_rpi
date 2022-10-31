@@ -151,16 +151,17 @@ static int gpio_freq_open (struct inode * ind, struct file * filp)
 	return 0;
 }
 
-
-
-
 static int gpio_freq_release (struct inode * ind,  struct file * filp)
 {
+	int err;
 	int gpio = iminor(ind);
 	struct gpio_freq_data * data = filp->private_data;
 
-
   printk(KERN_INFO "close inode %d:%d GPIO:%d mode:%d\n", imajor(ind) , iminor(ind),gpio_freq_table[gpio] , data->f_mode );
+
+	err = gpio_direction_input(gpio_freq_table[gpio]);
+	if (err != 0) 
+		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, gpio_freq_table[gpio]);
 
 	if ( data->f_mode==29)
 {
@@ -250,7 +251,6 @@ static int gpio_freq_read(struct file * filp, char * buffer, size_t length, loff
 
 }
 
-
 void transmit_code( int gpio , int * duree , size_t count )
 {
 	int i = 0 ;
@@ -268,7 +268,7 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
     int * kbuf;
     unsigned long flags;
 
-		struct gpio_freq_data * data = file->private_data ;
+	struct gpio_freq_data * data = file->private_data ;
 
 	  if (count>= 4*1024)
 			return -ENOMEM;
@@ -281,12 +281,26 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 
     if (copy_from_user(kbuf, buf, count)) {   return -EFAULT;    }
 
+	int err = gpio_direction_output(gpio_freq_table[data->gpio] , 0 );
+	if (err != 0) {
+		printk(KERN_ERR "%s: unable to set GPIO %d as output\n", THIS_MODULE->name, gpio_freq_table[data->gpio]);
+		return err;
+	}
+
     // ready for transmission
     local_irq_save(flags);
     transmit_code(	data->gpio , kbuf, count/4 );
     local_irq_restore(flags);
     printk(GPIO_FREQ_ENTRIES_NAME ": send %d bytes\n" ,data->gpio,count );
     kfree(kbuf);
+
+	int err = gpio_direction_input(gpio_freq_table[data->gpio]  );
+	if (err != 0) {
+		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, gpio_freq_table[data->gpio]);
+		return err;
+	}
+
+
     return count;
 }
 
