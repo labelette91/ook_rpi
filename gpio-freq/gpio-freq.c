@@ -20,7 +20,7 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
-#include <linux/version.h>
+//#include <linux/version.h>
 #include <linux/delay.h>
 #include <linux/hrtimer.h>
 
@@ -48,6 +48,14 @@
 #define BUFFER_SZ			4096 
 #define U32B unsigned long
 
+struct gpio_freq_data ;
+
+struct hrtimer_data {
+    struct hrtimer  timer;
+    struct gpio_freq_data* data;
+    int   Int ;
+};
+
 struct gpio_freq_data {
 		int gpio;
 		int f_mode;
@@ -61,6 +69,12 @@ struct gpio_freq_data {
     U32B lastDelta[BUFFER_SZ];
     
     U32B res[16];
+
+   struct hrtimer_data timer_tx;
+   int* txPulseDurationInMicros  ;
+   int  txCount ;
+   int  txNbData;
+
 };
 
 
@@ -77,14 +91,8 @@ void testData(struct gpio_freq_data * data)
 
 }
 
-struct hrtimer_data {
-    struct hrtimer  timer;
-    void* data;
-    int   Int ;
-};
 
 // timer
-static struct hrtimer_data timer_tx;
 static ktime_t period;
 int must_restart_timer = 0 ;
 
@@ -92,18 +100,29 @@ int must_restart_timer = 0 ;
 static enum hrtimer_restart handle_tx(struct hrtimer* timer)
 {
 struct hrtimer_data * ptimer = (struct hrtimer_data *) timer ;
+struct gpio_freq_data* data = ptimer->data;
 
   ktime_t current_time = ktime_get();
   enum hrtimer_restart result = HRTIMER_NORESTART;
  
+  int dureeInMicros = 0 ;
+  if (data->txPulseDurationInMicros !=0)
+      dureeInMicros = data->txPulseDurationInMicros[data->txCount] ;
+  int gpio          = data->gpio;
+
+  int pin   = dureeInMicros  & 1 ;
+  data->txCount++;
+//  gpio_set_value( gpio, pin );
+
   // Restarts the TX timer.
-  if (must_restart_timer++<10)
+//  if (must_restart_timer++<10)
+  if ( (data->txCount<data->txNbData) && (dureeInMicros!=0))
   {
-    hrtimer_forward(timer, current_time, period);
+    hrtimer_forward(timer, current_time, dureeInMicros);
     result = HRTIMER_RESTART;
   }
   
-	printk(KERN_INFO "timer %x\n",ptimer->data );  
+	printk(KERN_INFO "timer %d :%d micro %d\n",data->gpio , dureeInMicros , pin );  
   return result;
 }
 
@@ -114,15 +133,14 @@ void initTxTimer(struct hrtimer_data * ptimer )
   // Initializes the  timer.
   hrtimer_init(&ptimer->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
   ptimer->timer.function = &handle_tx;
-  ptimer->data = (void*)1;
   
   period = ktime_set(0, 1000000000/baudrate);
   
   // Starts the TX timer if it is not already running.
   if (!hrtimer_active(&ptimer->timer))
   {
-    hrtimer_start(&ptimer->timer, period, HRTIMER_MODE_REL);
-	printk(KERN_INFO "start timer %x\n" , ptimer->data);  
+    hrtimer_start(&ptimer->timer, 20*1000, HRTIMER_MODE_REL);
+	printk(KERN_INFO "start timer %d\n" , ptimer->data->gpio);  
   }
   
 }
@@ -142,24 +160,26 @@ static irqreturn_t gpio_freq_handler(int irq, void * filp);
 static int gpio_freq_open (struct inode * ind, struct file * filp)
 {
 	int err;
-	int gpio;
+	int Gpio;
 	struct gpio_freq_data * data;
 
-	gpio = iminor(ind);
-  printk(KERN_INFO "open inode %d:%d GPIO:%d mode:%d\n", imajor(ind) , iminor(ind),gpio_freq_table[gpio] , filp->f_mode );
+    //get gpio Pin
+	Gpio = gpio_freq_table[iminor(ind)];
+
+  printk(KERN_INFO "open inode %d:%d GPIO:%d mode:%d\n", imajor(ind) , iminor(ind),Gpio , filp->f_mode );
 	
 	data = kzalloc(sizeof(struct gpio_freq_data), GFP_KERNEL);
 	if (data == NULL)
 		return -ENOMEM;
 	
-	data->gpio = gpio_freq_table[gpio] ;
+	data->gpio = Gpio ;
 	data->f_mode = filp->f_mode ;
 	spin_lock_init(& (data->spinlock));
 		
-//	err = gpio_request(gpio_freq_table[gpio], THIS_MODULE->name);
-	err = gpio_request_one(gpio_freq_table[gpio], GPIOF_IN ,	 THIS_MODULE->name);
+//	err = gpio_request(Gpio, THIS_MODULE->name);
+	err = gpio_request_one(Gpio, GPIOF_IN ,	 THIS_MODULE->name);
 	if (err != 0) {
-		printk(KERN_ERR "%s: unable to reserve GPIO %d\n", THIS_MODULE->name, gpio_freq_table[gpio]);
+		printk(KERN_ERR "%s: unable to reserve GPIO %d\n", THIS_MODULE->name, Gpio);
 		kfree(data);
 		return err;
 	}
@@ -167,20 +187,20 @@ static int gpio_freq_open (struct inode * ind, struct file * filp)
 //mode rd
 	if ( filp->f_mode==29)
 	{
-		err = gpio_direction_input(gpio_freq_table[gpio]);
+		err = gpio_direction_input(Gpio);
 		if (err != 0) {
-			printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, gpio_freq_table[gpio]);
-			gpio_free(gpio_freq_table[gpio]);
+			printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, Gpio);
+			gpio_free(Gpio);
 			kfree(data);
 			return err;
 		}
 		
-		err = request_irq(gpio_to_irq(gpio_freq_table[gpio]), gpio_freq_handler,
+		err = request_irq(gpio_to_irq(Gpio), gpio_freq_handler,
 		                  IRQF_SHARED | IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING ,
 		                  THIS_MODULE->name, filp);
 		if (err != 0) {
-			printk(KERN_ERR "%s: unable to handle GPIO %d IRQ\n", THIS_MODULE->name, gpio_freq_table[gpio]);
-			gpio_free(gpio_freq_table[gpio]);
+			printk(KERN_ERR "%s: unable to handle GPIO %d IRQ\n", THIS_MODULE->name, Gpio);
+			gpio_free(Gpio);
 			kfree(data);
 			return err;
 		}
@@ -189,10 +209,10 @@ static int gpio_freq_open (struct inode * ind, struct file * filp)
 //mode wr		
 	if ( filp->f_mode==30)
 	{
-		err = gpio_direction_output(gpio_freq_table[gpio] , 0 );
+		err = gpio_direction_output(Gpio , 0 );
 		if (err != 0) {
-			printk(KERN_ERR "%s: unable to set GPIO %d as output\n", THIS_MODULE->name, gpio_freq_table[gpio]);
-			gpio_free(gpio_freq_table[gpio]);
+			printk(KERN_ERR "%s: unable to set GPIO %d as output\n", THIS_MODULE->name, Gpio);
+			gpio_free(Gpio);
 			kfree(data);
 			return err;
 		}
@@ -202,7 +222,10 @@ static int gpio_freq_open (struct inode * ind, struct file * filp)
 			kfree(data);
 			return -1 ;
 		}
-		
+
+    data->timer_tx.data = data ;
+
+    initTxTimer(&data->timer_tx);
 		
 
 	filp->private_data = data;
@@ -213,20 +236,24 @@ static int gpio_freq_open (struct inode * ind, struct file * filp)
 static int gpio_freq_release (struct inode * ind,  struct file * filp)
 {
 	int err;
-	int gpio = iminor(ind);
+    //get gpio Pin
+	int Gpio = gpio_freq_table[iminor(ind)];
+
 	struct gpio_freq_data * data = filp->private_data;
 
-  printk(KERN_INFO "close inode %d:%d GPIO:%d mode:%d\n", imajor(ind) , iminor(ind),gpio_freq_table[gpio] , data->f_mode );
+  printk(KERN_INFO "close inode %d:%d GPIO:%d mode:%d\n", imajor(ind) , iminor(ind),Gpio , data->f_mode );
 
-	err = gpio_direction_input(gpio_freq_table[gpio]);
+	err = gpio_direction_input(Gpio);
 	if (err != 0) 
-		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, gpio_freq_table[gpio]);
+		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, Gpio);
 
 	if ( data->f_mode==29)
 {
-	free_irq(gpio_to_irq(gpio_freq_table[gpio]), filp);
+	free_irq(gpio_to_irq(Gpio), filp);
 }
-	gpio_free(gpio_freq_table[gpio]);
+	gpio_free(Gpio);
+
+    cancelTxTimer(&data->timer_tx);
 
 	kfree(filp->private_data);
 
@@ -334,28 +361,35 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 	
 	 	//alloc data buffer
 		kbuf = kzalloc(count, GFP_KERNEL);
-		if (data == NULL)
+		if (kbuf == NULL)
 			return -ENOMEM;
 
 
     if (copy_from_user(kbuf, buf, count)) {   return -EFAULT;    }
 
-	err = gpio_direction_output(gpio_freq_table[data->gpio] , 0 );
+    data->txPulseDurationInMicros   = kbuf;
+    data->txNbData                  = count/4 ;
+    data->txCount = 0 ;
+
+//    disable_irq(gpio_to_irq(data->gpio));
+
+	err = gpio_direction_output(data->gpio , 0 );
 	if (err != 0) {
-		printk(KERN_ERR "%s: unable to set GPIO %d as output\n", THIS_MODULE->name, gpio_freq_table[data->gpio]);
+		printk(KERN_ERR "%s: unable to set GPIO %d as output\n", THIS_MODULE->name, data->gpio);
 		return err;
 	}
 
     // ready for transmission
-    local_irq_save(flags);
-    transmit_code(	data->gpio , kbuf, count/4 );
-    local_irq_restore(flags);
+//    local_irq_save(flags);
+//    transmit_code(	data->gpio , kbuf, count/4 );
+    mdelay(20);
+//    local_irq_restore(flags);
     printk(GPIO_FREQ_ENTRIES_NAME ": send %d bytes\n" ,data->gpio,count );
     kfree(kbuf);
 
-	err = gpio_direction_input(gpio_freq_table[data->gpio]  );
+	err = gpio_direction_input(data->gpio  );
 	if (err != 0) {
-		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, gpio_freq_table[data->gpio]);
+		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, data->gpio);
 		return err;
 	}
 
@@ -515,7 +549,6 @@ static int __init gpio_freq_init (void)
         printk(KERN_ERR "%s: error ading device\n", THIS_MODULE->name);
 		return err;
 	}
-    initTxTimer(&timer_tx);
 
 	return 0; 
 }
@@ -538,7 +571,6 @@ void __exit gpio_freq_exit (void)
 
 	unregister_chrdev_region(gpio_freq_dev, gpio_freq_nb_gpios);
 
-    cancelTxTimer(&timer_tx);
 }
 
 

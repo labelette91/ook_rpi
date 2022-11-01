@@ -24,9 +24,6 @@
     <ClCompile Include="virtualserial.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Domotic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="HomeEasyTransmitter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -36,7 +33,10 @@
     <ClCompile Include="RFM69.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\rfrpi_src\gpio-freq\gpio-freq.c">
+    <ClCompile Include=".\gpio-freq\gpio-freq.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Arduino\Ook_OSV12\Domotic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
