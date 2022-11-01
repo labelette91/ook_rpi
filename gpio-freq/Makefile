@@ -18,8 +18,11 @@ modules:
 	${MAKE} -C ${KERNEL_DIR} M=${MODULE_DIR}  modules
 #	./installPulseDriver.sh stop
 #	./installPulseDriver.sh start
+	sudo dmesg -c
+	sudo dmesg -c
 	sudo rmmod gpio-freq.ko
-	sudo insmod /home/pi/rfrpi_src/gpio-freq/gpio-freq.ko gpios=16,22,23,17,24
+	sudo insmod gpio-freq.ko gpios=16,22,23,17,24
+#	sudo insmod /home/pi/rfrpi_src/gpio-freq/gpio-freq.ko gpios=16,22,23,17,24
 	sudo chown pi /dev/gpiofreq*
 	lsmod | grep gpio_freq
 

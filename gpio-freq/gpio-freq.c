@@ -22,6 +22,7 @@
 #include <linux/spinlock.h>
 #include <linux/version.h>
 #include <linux/delay.h>
+#include <linux/hrtimer.h>
 
 #include <linux/uaccess.h>
 
@@ -75,6 +76,60 @@ void testData(struct gpio_freq_data * data)
     }
 
 }
+
+struct hrtimer_data {
+    struct hrtimer  timer;
+    void* data;
+};
+
+// timer
+static struct hrtimer timer_tx;
+static ktime_t period;
+int must_restart_timer = 0 ;
+
+
+static enum hrtimer_restart handle_tx(struct hrtimer* timer)
+{
+  ktime_t current_time = ktime_get();
+  enum hrtimer_restart result = HRTIMER_NORESTART;
+ 
+  // Restarts the TX timer.
+  if (must_restart_timer++<10)
+  {
+    hrtimer_forward(&timer_tx, current_time, period);
+    result = HRTIMER_RESTART;
+  }
+  
+	printk(KERN_INFO "timer \n" );  
+  return result;
+}
+
+void initTxTimer(void)
+{
+  int baudrate = 1 ;
+
+  // Initializes the TX timer.
+  hrtimer_init(&timer_tx, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+  timer_tx.function = &handle_tx;
+  
+  period = ktime_set(0, 1000000000/baudrate);
+  
+  // Starts the TX timer if it is not already running.
+  if (!hrtimer_active(&timer_tx))
+  {
+    hrtimer_start(&timer_tx, period, HRTIMER_MODE_REL);
+	printk(KERN_INFO "start timer \n" );  
+  }
+  
+}
+
+
+static void cancelTxTimer(void)
+{
+    hrtimer_cancel(&timer_tx);
+} 
+
+//---------
 
 // ------------------ Driver private methods -------------------------------
 
@@ -175,7 +230,6 @@ static int gpio_freq_release (struct inode * ind,  struct file * filp)
 	return 0;
 }
 
-
 int copy_data(struct gpio_freq_data * data , char * buffer, size_t length )
 {
     int nb  ;
@@ -267,6 +321,7 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 {
     int * kbuf;
     unsigned long flags;
+	int err;
 
 	struct gpio_freq_data * data = file->private_data ;
 
@@ -281,7 +336,7 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 
     if (copy_from_user(kbuf, buf, count)) {   return -EFAULT;    }
 
-	int err = gpio_direction_output(gpio_freq_table[data->gpio] , 0 );
+	err = gpio_direction_output(gpio_freq_table[data->gpio] , 0 );
 	if (err != 0) {
 		printk(KERN_ERR "%s: unable to set GPIO %d as output\n", THIS_MODULE->name, gpio_freq_table[data->gpio]);
 		return err;
@@ -294,7 +349,7 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
     printk(GPIO_FREQ_ENTRIES_NAME ": send %d bytes\n" ,data->gpio,count );
     kfree(kbuf);
 
-	int err = gpio_direction_input(gpio_freq_table[data->gpio]  );
+	err = gpio_direction_input(gpio_freq_table[data->gpio]  );
 	if (err != 0) {
 		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, gpio_freq_table[data->gpio]);
 		return err;
@@ -303,8 +358,6 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 
     return count;
 }
-
-
 
 static irqreturn_t gpio_freq_handler(int irq, void * arg)
 {
@@ -401,7 +454,6 @@ static long gpio_freq_ioctl(struct file* file, unsigned int cmd, unsigned long a
 }
 
 
-
 // ------------------ Driver private global data ----------------------------
 
 static struct file_operations gpio_freq_fops = {
@@ -456,8 +508,10 @@ static int __init gpio_freq_init (void)
 			device_destroy(gpio_freq_class, MKDEV(MAJOR(gpio_freq_dev), i));
 		class_destroy(gpio_freq_class);
 		unregister_chrdev_region(gpio_freq_dev, gpio_freq_nb_gpios);
+        printk(KERN_ERR "%s: error ading device\n", THIS_MODULE->name);
 		return err;
 	}
+//    initTxTimer();
 
 	return 0; 
 }
@@ -479,6 +533,8 @@ void __exit gpio_freq_exit (void)
 	gpio_freq_class = NULL;
 
 	unregister_chrdev_region(gpio_freq_dev, gpio_freq_nb_gpios);
+
+//    cancelTxTimer();
 }
 
 
