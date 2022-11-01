@@ -104,31 +104,36 @@ static enum hrtimer_restart handle_tx(struct hrtimer* timer)
 struct hrtimer_data * ptimer = (struct hrtimer_data *) timer ;
 struct gpio_freq_data* data = ptimer->data;
   enum hrtimer_restart result = HRTIMER_NORESTART;
+  int dureeInMicros = 0 ;
+  int gpio ;
+  int pin  ;
 
     ktime_t current_time = ktime_get();
     ktime_t delta = ktime_sub_ns(current_time, data->lastTxTime);
     ktime_t deltaMicros  = ktime_to_us(delta);
     data->lastTxTime = current_time ;
 
-  int dureeInMicros = 0 ;
   if (data->txPulseDurationInMicros !=0)
       dureeInMicros = data->txPulseDurationInMicros[data->txCount] ;
-  int gpio          = data->gpio;
-
-  int pin   = dureeInMicros  & 1 ;
-  data->txCount++;
+  gpio          = data->gpio;
+  pin   = dureeInMicros  & 1 ;
 //  gpio_set_value( gpio, pin );
 
   // Restarts the TX timer.
 //  if (must_restart_timer++<10)
-  if ( (data->txCount<=data->txNbData) && (dureeInMicros!=0))
+  if ( (data->txCount<data->txNbData) && (dureeInMicros!=0))
   {
     ktime_t period = ktime_set(0, dureeInMicros*1000  );
     hrtimer_forward(timer, current_time, period);
     result = HRTIMER_RESTART;
   }
+  else
+  {
+    //wake_up_process(data->sleeping_task);
+  }
   
-	printk(KERN_INFO "timer %d :%d micro %d : %ld \n",data->gpio , dureeInMicros , pin ,  deltaMicros );  
+	printk(KERN_INFO "timer %d :%d micro %d : %lld \n",data->gpio , dureeInMicros , pin ,  deltaMicros );  
+  data->txCount++;
   return result;
 }
 
@@ -346,19 +351,24 @@ void transmit_code( int gpio , int * duree , size_t count )
 {
 	int i = 0 ;
 	int pin = 0 ;
+    unsigned long flags;
+    //
+    local_irq_save(flags); //Disabling all interrupts
 	for ( i=0;i<count;i++){
 	    pin = duree[i] & 1 ;
 	    //printk(KERN_INFO  "%d: send %d %d\n" ,gpio, pin , duree[i]);
 	    gpio_set_value( gpio, pin );
 	    udelay(duree[i]);
 	}
+    local_irq_restore(flags);
 }
 
 static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_t count, loff_t *pos)
 {
     int * kbuf;
-    unsigned long flags;
 	int err;
+    int i;
+    unsigned int sendDuree =0 ;
 
 	struct gpio_freq_data * data = file->private_data ;
 
@@ -377,7 +387,7 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
     data->txNbData                  = count/4 ;
     data->txCount = 0 ;
 
-//    disable_irq(gpio_to_irq(data->gpio));
+//    disable_irq(gpio_to_irq(data->gpio)); //desable gpio pin interrupt
 
 	err = gpio_direction_output(data->gpio , 0 );
 	if (err != 0) {
@@ -387,12 +397,15 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 
     startTxTimer(&data->timer_tx, 20000 );
 
-    // ready for transmission
-//    local_irq_save(flags);
+    for ( i=0;i<data->txNbData;i++)
+        sendDuree+=data->txPulseDurationInMicros[i];
+
 //    transmit_code(	data->gpio , kbuf, count/4 );
-    mdelay(20);
-//    local_irq_restore(flags);
-    printk(GPIO_FREQ_ENTRIES_NAME ": send %d bytes\n" ,data->gpio,count );
+
+    while (data->txCount<=data->txNbData)
+        mdelay(1);
+
+    printk(GPIO_FREQ_ENTRIES_NAME ": send %d bytes %d us\n" ,data->gpio,count , sendDuree );
     kfree(kbuf);
 
 	err = gpio_direction_input(data->gpio  );
@@ -400,6 +413,7 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, data->gpio);
 		return err;
 	}
+//    enable_irq(gpio_to_irq(data->gpio));
 
 
     return count;
