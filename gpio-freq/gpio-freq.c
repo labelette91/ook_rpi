@@ -27,6 +27,7 @@
 #include <linux/uaccess.h>
 
 #include <linux/ioctl.h>
+
  
 #define WR_VALUE _IOW('a','a',int32_t*)
 #define RD_VALUE _IOR('a','b',int32_t*)
@@ -60,6 +61,7 @@ struct gpio_freq_data {
 		int gpio;
 		int f_mode;
     ktime_t lastIrq_time;
+    ktime_t lastTxTime;
     int  pRead;
     int  pWrite;
     int  wasOverflow;
@@ -93,7 +95,7 @@ void testData(struct gpio_freq_data * data)
 
 
 // timer
-static ktime_t period;
+
 int must_restart_timer = 0 ;
 
 
@@ -101,10 +103,13 @@ static enum hrtimer_restart handle_tx(struct hrtimer* timer)
 {
 struct hrtimer_data * ptimer = (struct hrtimer_data *) timer ;
 struct gpio_freq_data* data = ptimer->data;
-
-  ktime_t current_time = ktime_get();
   enum hrtimer_restart result = HRTIMER_NORESTART;
- 
+
+    ktime_t current_time = ktime_get();
+    ktime_t delta = ktime_sub_ns(current_time, data->lastTxTime);
+    ktime_t deltaMicros  = ktime_to_us(delta);
+    data->lastTxTime = current_time ;
+
   int dureeInMicros = 0 ;
   if (data->txPulseDurationInMicros !=0)
       dureeInMicros = data->txPulseDurationInMicros[data->txCount] ;
@@ -116,35 +121,36 @@ struct gpio_freq_data* data = ptimer->data;
 
   // Restarts the TX timer.
 //  if (must_restart_timer++<10)
-  if ( (data->txCount<data->txNbData) && (dureeInMicros!=0))
+  if ( (data->txCount<=data->txNbData) && (dureeInMicros!=0))
   {
-    hrtimer_forward(timer, current_time, dureeInMicros);
+    ktime_t period = ktime_set(0, dureeInMicros*1000  );
+    hrtimer_forward(timer, current_time, period);
     result = HRTIMER_RESTART;
   }
   
-	printk(KERN_INFO "timer %d :%d micro %d\n",data->gpio , dureeInMicros , pin );  
+	printk(KERN_INFO "timer %d :%d micro %d : %ld \n",data->gpio , dureeInMicros , pin ,  deltaMicros );  
   return result;
 }
 
 void initTxTimer(struct hrtimer_data * ptimer )
 {
-  int baudrate = 1 ;
-
   // Initializes the  timer.
   hrtimer_init(&ptimer->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
   ptimer->timer.function = &handle_tx;
+}
+
+void startTxTimer(struct hrtimer_data * ptimer , int periodInNs)
+{
   
-  period = ktime_set(0, 1000000000/baudrate);
+  ktime_t period = ktime_set(0, periodInNs  );
   
   // Starts the TX timer if it is not already running.
   if (!hrtimer_active(&ptimer->timer))
   {
-    hrtimer_start(&ptimer->timer, 20*1000, HRTIMER_MODE_REL);
+    hrtimer_start(&ptimer->timer, period, HRTIMER_MODE_REL);
 	printk(KERN_INFO "start timer %d\n" , ptimer->data->gpio);  
   }
-  
 }
-
 
 static void cancelTxTimer(struct hrtimer_data * ptimer)
 {
@@ -378,6 +384,8 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 		printk(KERN_ERR "%s: unable to set GPIO %d as output\n", THIS_MODULE->name, data->gpio);
 		return err;
 	}
+
+    startTxTimer(&data->timer_tx, 20000 );
 
     // ready for transmission
 //    local_irq_save(flags);
