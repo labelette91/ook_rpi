@@ -80,53 +80,57 @@ void testData(struct gpio_freq_data * data)
 struct hrtimer_data {
     struct hrtimer  timer;
     void* data;
+    int   Int ;
 };
 
 // timer
-static struct hrtimer timer_tx;
+static struct hrtimer_data timer_tx;
 static ktime_t period;
 int must_restart_timer = 0 ;
 
 
 static enum hrtimer_restart handle_tx(struct hrtimer* timer)
 {
+struct hrtimer_data * ptimer = (struct hrtimer_data *) timer ;
+
   ktime_t current_time = ktime_get();
   enum hrtimer_restart result = HRTIMER_NORESTART;
  
   // Restarts the TX timer.
   if (must_restart_timer++<10)
   {
-    hrtimer_forward(&timer_tx, current_time, period);
+    hrtimer_forward(timer, current_time, period);
     result = HRTIMER_RESTART;
   }
   
-	printk(KERN_INFO "timer \n" );  
+	printk(KERN_INFO "timer %x\n",ptimer->data );  
   return result;
 }
 
-void initTxTimer(void)
+void initTxTimer(struct hrtimer_data * ptimer )
 {
   int baudrate = 1 ;
 
-  // Initializes the TX timer.
-  hrtimer_init(&timer_tx, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-  timer_tx.function = &handle_tx;
+  // Initializes the  timer.
+  hrtimer_init(&ptimer->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+  ptimer->timer.function = &handle_tx;
+  ptimer->data = (void*)1;
   
   period = ktime_set(0, 1000000000/baudrate);
   
   // Starts the TX timer if it is not already running.
-  if (!hrtimer_active(&timer_tx))
+  if (!hrtimer_active(&ptimer->timer))
   {
-    hrtimer_start(&timer_tx, period, HRTIMER_MODE_REL);
-	printk(KERN_INFO "start timer \n" );  
+    hrtimer_start(&ptimer->timer, period, HRTIMER_MODE_REL);
+	printk(KERN_INFO "start timer %x\n" , ptimer->data);  
   }
   
 }
 
 
-static void cancelTxTimer(void)
+static void cancelTxTimer(struct hrtimer_data * ptimer)
 {
-    hrtimer_cancel(&timer_tx);
+    hrtimer_cancel(&ptimer->timer);
 } 
 
 //---------
@@ -511,7 +515,7 @@ static int __init gpio_freq_init (void)
         printk(KERN_ERR "%s: error ading device\n", THIS_MODULE->name);
 		return err;
 	}
-//    initTxTimer();
+    initTxTimer(&timer_tx);
 
 	return 0; 
 }
@@ -534,7 +538,7 @@ void __exit gpio_freq_exit (void)
 
 	unregister_chrdev_region(gpio_freq_dev, gpio_freq_nb_gpios);
 
-//    cancelTxTimer();
+    cancelTxTimer(&timer_tx);
 }
 
 
