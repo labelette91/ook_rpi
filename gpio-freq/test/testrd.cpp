@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 
     	ioctl(fileno(fp), RD_VALUE, (int32_t*) &value);
 
-       	printf("\nioctl %d ",  value  );
+//       	printf("\nioctl %d ",  value  );
 
        	int count = fread(pulse,4,2048,fp);
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
          	}
          
        }
-       usleep(10000l);
+       usleep(100000l);
     }
  		printf("\n Pulse:%d = %d per sec\n",nbP , nbP/ (NBCT/100));
     fclose(fp);
