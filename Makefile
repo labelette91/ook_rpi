@@ -23,8 +23,7 @@ rfrpi_objects=$(addsuffix .o,$(basename  $(rfrpi_files)))
 target_dir = .
 target=./rpi_ook
 
-
-all:  $(target) 
+all:  $(target) ook_rpi.o
 
 $(target): $(rfrpi_objects) 
 	$(CX) $(CXXFLAGS) $(LDFLAGS) $^ -o $@ -lwiringPi -lpthread 
@@ -37,4 +36,7 @@ $(target): $(rfrpi_objects)
 clean:
 	@rm $(OBJ_DIR)/*.o
 	@rm $(target)
+ook_rpi.o: ook_rpi.cpp  ../Arduino/Ook_OSV12/Ook_OSV12.ino
+	@echo compiling $@ : $<
+	$(CX) $(CFLAGS) $(INC) $< -o $@ $(TRFLAGS)
 	

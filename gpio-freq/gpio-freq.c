@@ -117,7 +117,7 @@ struct gpio_freq_data* data = ptimer->data;
       dureeInMicros = data->txPulseDurationInMicros[data->txCount] ;
   gpio          = data->gpio;
   pin   = dureeInMicros  & 1 ;
-//  gpio_set_value( gpio, pin );
+  gpio_set_value( gpio, pin );
 
   // Restarts the TX timer.
 //  if (must_restart_timer++<10)
@@ -195,8 +195,9 @@ static int gpio_freq_open (struct inode * ind, struct file * filp)
 		return err;
 	}
 
-//mode rd
+//mode rd or r+ = Rd/Wr
 	if ( filp->f_mode==29)
+//	if ( ( filp->f_mode==29) || ( filp->f_mode==31) )
 	{
 		err = gpio_direction_input(Gpio);
 		if (err != 0) {
@@ -259,6 +260,7 @@ static int gpio_freq_release (struct inode * ind,  struct file * filp)
 		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, Gpio);
 
 	if ( data->f_mode==29)
+//	if ( ( filp->f_mode==29) || ( filp->f_mode==31) )
 {
 	free_irq(gpio_to_irq(Gpio), filp);
 }
@@ -394,16 +396,15 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
 		printk(KERN_ERR "%s: unable to set GPIO %d as output\n", THIS_MODULE->name, data->gpio);
 		return err;
 	}
-
+/*
     startTxTimer(&data->timer_tx, 20000 );
-
-    for ( i=0;i<data->txNbData;i++)
-        sendDuree+=data->txPulseDurationInMicros[i];
-
-//    transmit_code(	data->gpio , kbuf, count/4 );
-
+    for ( i=0;i<data->txNbData;i++)    sendDuree+=data->txPulseDurationInMicros[i];
     while (data->txCount<=data->txNbData)
         mdelay(1);
+*/
+    transmit_code(	data->gpio , kbuf, count/4 );
+
+
 
     printk(GPIO_FREQ_ENTRIES_NAME ": send %d bytes %d us\n" ,data->gpio,count , sendDuree );
     kfree(kbuf);
@@ -427,6 +428,7 @@ static irqreturn_t gpio_freq_handler(int irq, void * arg)
     ktime_t delta;
    	unsigned long ns;
 	int pinData;
+   	current_time = ktime_get();
 	
 	if (filp == NULL)
 		return -IRQ_NONE;
@@ -436,13 +438,12 @@ static irqreturn_t gpio_freq_handler(int irq, void * arg)
 		return IRQ_NONE;
 
 	pinData = gpio_get_value(data->gpio);
-   	current_time = ktime_get();
 	delta = ktime_sub_ns(current_time, data->lastIrq_time);
 	ns = ktime_to_us(delta);
 
 //  printk(KERN_INFO "pulse %ld\n", ns );
 
-    spin_lock(&(data->spinlock));
+//    spin_lock(&(data->spinlock));
 
 		//calcul etat du pulse que l'on mesure
 		if (pinData == 1)
@@ -468,7 +469,7 @@ static irqreturn_t gpio_freq_handler(int irq, void * arg)
 	} else {
 		data->wasOverflow = 0;
 	}
-    spin_unlock(&(data->spinlock));
+//    spin_unlock(&(data->spinlock));
 
 	return IRQ_HANDLED;
 
