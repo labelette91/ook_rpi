@@ -146,17 +146,19 @@ void UpDatePulseCounter(int count )
 	{
 		NbPulse = NbPulses / 10 ;
 		NbPulses = 0;
-		Serial.printf( " NbPulse %d\n", NbPulse);
+//		Serial.printf( " NbPulse %d\n", NbPulse);
 		//fflush(stdout);
 		//			fprintf(stdout,"NbPulse %d\n", NbPulsePerSec);
 		//			easy->initPin();
 		//			easy->setSwitch(1, 0x55, 1);    // turn on device 0
-	    if ((CtMs / 10000L) == 1){
+/*
+        if ((CtMs / 10000L) == 1){
          PrintReg(REG_LNA );
          PrintReg(REG_OOKPEAK );
          PrintReg(REG_OOKAVG );
          PrintReg(REG_OOKFIX );
         }
+*/
 	}
     //chaque sec
 	if ((CtMs % 1000L) == 0)
@@ -191,7 +193,7 @@ int rssiGetAverage()
 int ook_rpi_read_drv(int rxPin, int txPin , int ledpin, int reportType ,  int dumpPulse )
 {
     setReportType(reportType);
-    Setup( rxPin,  txPin , ledpin,"OTIO ;OOK ;HAGER ;HOMEEASY ;MD230 ;RUBICSON;HIDEKI ;RAIN ;");
+    Setup( rxPin,  txPin , ledpin,"OTIO;OOK;HAGER;HOMEEASY;MD230;RUBICSON;HIDEKI;RAIN;");
 
 	Serial.printf("running\n" );
 	while (1) {
