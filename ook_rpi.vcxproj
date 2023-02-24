@@ -153,6 +153,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Arduino\Ook_OSV12\reportSerial.cpp" />
     <ClCompile Include=".\gpio-freq\gpio-freq.c" />
     <ClCompile Include="..\Arduino\Ook_OSV12\Domotic.cpp" />
     <ClCompile Include="hager.cpp" />
@@ -160,16 +161,21 @@
     <ClCompile Include="ook_rpi.cpp" />
     <ClCompile Include="Oregon.cpp" />
     <ClCompile Include="RFM69.cpp" />
+    <ClCompile Include="rfmPrint.cpp" />
     <ClCompile Include="virtualserial.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Arduino\Ook_OSV12\Ook_OSV12.ino" />
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Arduino.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="decodeotio.h" />
     <ClInclude Include="deftype.h" />
     <ClInclude Include="domotic.h" />
+    <ClInclude Include="hager.h" />
+    <ClInclude Include="HomeEasyTransmitter.h" />
     <ClInclude Include="ookdecoder.h" />
     <ClInclude Include="oregon.h" />
     <ClInclude Include="print.h" />

@@ -4,6 +4,7 @@
 #include <string>
 #include <stdio.h>
 #include "print.h"
+#include  "reportSerial.h"
 
 //map delay 
 #define DelayMicroseconds(VALUE)     delayMicrosecondsHard(VALUE);
@@ -258,7 +259,7 @@ void hagerSends(byte id4, byte cmnd)
 //unit code = 1 : cmnd = 0 eco   1: confor
 //unit code = 2 : cmnd = 0 hgel  1: confor
 //unit code = 3 : cmnd = 0 arret 1: confor
-void ManageHager(byte unitcode, byte id4, byte cmnd)
+void ManageHager( byte id4 , byte unitcode , byte cmnd )
 {
 	//unit code = 0 : configuration
 	if (unitcode == 16)
@@ -283,5 +284,10 @@ void ManageHager(byte unitcode, byte id4, byte cmnd)
 		else
 			//confor
 			hagerSends(id4, cmnd);
+	}
+	else
+	{
+		 if (isReportSerial()) 
+			 Serial.printf("Invalid cmd :sTypeAC id:%x unit:%d cmd:%d\n" , id4, unitcode, cmnd);
 	}
 }

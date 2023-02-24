@@ -39,9 +39,18 @@
     <ClCompile Include="..\Arduino\Ook_OSV12\Domotic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="rfmPrint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Arduino\Ook_OSV12\reportSerial.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\Arduino\Ook_OSV12\Ook_OSV12.ino">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
@@ -81,6 +90,15 @@
     </ClInclude>
     <ClInclude Include="Config.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Arduino.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HomeEasyTransmitter.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

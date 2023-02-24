@@ -60,7 +60,7 @@ void attachInterrupt(uint8_t rxGpio, void (*)(void), int mode)
 	std::string Device;
     int rxBcmPin = wpiPinToGpio(rxGpio);
 	Device = DeviceR + std::to_string(rxBcmPin) ;
-	Serial.printf("opening %s\n", Device.c_str() );
+	Serial.printf("opening %s rxGpio:%d\n", Device.c_str() , rxGpio);
 
     if (fp !=0)
         fclose(fp);
@@ -69,11 +69,18 @@ void attachInterrupt(uint8_t rxGpio, void (*)(void), int mode)
 	fp = fopen(Device.c_str(), "r");
 	if (fp == NULL) {Serial.printf("[ERROR] %s device not found - kernel driver must be started or already running !!\n", Device.c_str());		exit(1); 	}
 }
-void detachInterrupt(uint8_t intNumber)
+void detachInterrupt(uint8_t rxGpio)
 {
     fclose(fp);
-//				fp = fopen(Device.c_str(), "w");
-//				if (fp == NULL) {Serial.printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
+	fp  = 0 ;
+
+ 	std::string Device;
+     int rxBcmPin = wpiPinToGpio(rxGpio);
+ 	Device = DeviceR + std::to_string(rxBcmPin) ;
+	Serial.printf("close %s rxGpio:%d\n", Device.c_str() , rxGpio);
+// 	
+// 	fp = fopen(Device.c_str(), "w");
+// 	if (fp == NULL) {Serial.printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
 
 }
 
@@ -177,7 +184,7 @@ void UpDatePulseCounter(int count )
 	{
         rssiMin = rssiCumul / 60 ;
 		{
-			Serial.printf("rssi:%d NbPulse %d %d\n", rssiMin, NbPulse );
+//			Serial.printf("rssi:%d NbPulse %d %d\n", rssiMin, NbPulse );
 		}
         rssiCumul = 0 ;
 	}
