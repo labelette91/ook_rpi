@@ -135,9 +135,9 @@ void RFM69::setFrequency(uint32_t FRF)
   writeReg(REG_FRFLSB, FRF);
 }
 
-void RFM69::setMode(byte newMode)
+word RFM69::setMode(byte newMode)
 {
-	if (newMode == _mode) return; //TODO: can remove this?
+	if (newMode == _mode) return 0; //TODO: can remove this?
 
 	switch (newMode) {
 		case RF69_MODE_TX:
@@ -157,7 +157,7 @@ void RFM69::setMode(byte newMode)
 		case RF69_MODE_SLEEP:
 			writeReg(REG_OPMODE, (readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP);
 			break;
-		default: return;
+		default: return 0xFFFF;
 	}
 
 	// we are using packet mode, so this check is not really needed
@@ -167,10 +167,11 @@ void RFM69::setMode(byte newMode)
 	while ( ((readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00) && (i--!=0) )
 	{
 	}; // Wait for ModeReady
-	Serial.print("READY:");
-	Serial.println(MAX_WAIT-i);
+	//Serial.print("READY:");
+	//Serial.println(MAX_WAIT-i);
 
 	_mode = newMode;
+    return MAX_WAIT-i;
 }
 
 void RFM69::sleep() {

@@ -121,7 +121,7 @@ class RFM69 {
     byte readReg(byte addr);
     void writeReg(byte addr, byte val);
     void readAllRegs();
-    void setMode(byte mode);
+    word setMode(byte mode);
     void PrintReg(byte regAddr , byte regVal);
 
   protected:
