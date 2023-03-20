@@ -94,12 +94,23 @@ DIR *d=NULL;
 //creer le lien /dev/serialxx pointant sur ptsserial /dev/pts/n
 std::string  createSerialLink(std::string ptsserial )
 {
-	for (int i=1;i<10;i++)
+//	for (int i=1;i<10;i++)
 	{
-	  std::string serial = "serial"+std::to_string(i) ;
+//	  std::string serial = "serial"+std::to_string(i) ;
+	  std::string serial = "serialRFX" ;
 	  	
 		int res =  findSerial(serial , ptsserial );
 //  	printf("res : %d\n", res);
+		// return 0 = link already exist but point on another ptsName
+		if (res==0)
+		{
+			//del link
+			serial = "/dev/"+serial ;
+			std::string cmd =  "rm " +  serial  ;			
+			int err = system(cmd.c_str() ); 
+  			if (err)
+				printf("error remove  link  %s : %d\n", serial.c_str() , err);
+		}
 		if (res>=1)
 		{
 			serial = "/dev/"+serial ;
@@ -108,7 +119,7 @@ std::string  createSerialLink(std::string ptsserial )
 				  std::string cmd =  "sudo ln -s " +  ptsserial + " " + serial  ;			
 				  //system("ls -lh >/dev/null 2>&1"); 
 				  int err = system(cmd.c_str() ); 
-  				//printf("create link  %s %s : %d\n", ptsserial.c_str() ,serial.c_str() , err);
+  				  printf("create link  %s %s : %d\n", ptsserial.c_str() ,serial.c_str() , err);
 				  
 			}	
 			return serial;
@@ -133,7 +144,7 @@ char* pts_name = ptsname(fd);
 //std::cerr << "ptsname: " << pts_name << std::endl;
 
 std::string devSerial = createSerialLink(pts_name);
-//std::cerr << "SerialName: " << devSerial << std::endl;
+std::cerr << "ptsname: " << pts_name <<  " SerialName: " << devSerial << std::endl;
 
 	/* serial port parameters */
 	struct termios newtio;
