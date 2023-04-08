@@ -309,7 +309,7 @@ void HomeEasyTransmitter::SetSendPair(word* buffer, bool b)
 //end with 0
 void HomeEasyTransmitter::SetTransmitBuffer(word* buffer,bool blnOn,unsigned long transmitterId, short recipient)
 {
-  char i;
+  signed char  i;
   
   // Do the latch sequence.. 
   //rfm69_set_data( HIGH);
