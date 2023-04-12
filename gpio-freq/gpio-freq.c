@@ -389,7 +389,7 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
     data->txNbData                  = count/4 ;
     data->txCount = 0 ;
 
-//    disable_irq(gpio_to_irq(data->gpio)); //desable gpio pin interrupt
+    disable_irq(gpio_to_irq(data->gpio)); //desable gpio pin interrupt
 
 	err = gpio_direction_output(data->gpio , 0 );
 	if (err != 0) {
@@ -409,7 +409,7 @@ static ssize_t gpio_freq_write(struct file *file, const char __user *buf,  size_
     printk(GPIO_FREQ_ENTRIES_NAME ": send %d bytes %d us\n" ,data->gpio,count , sendDuree );
     kfree(kbuf);
 
-	err = gpio_direction_input(data->gpio  );
+//	err = gpio_direction_input(data->gpio  );
 	if (err != 0) {
 		printk(KERN_ERR "%s: unable to set GPIO %d as input\n", THIS_MODULE->name, data->gpio);
 		return err;
