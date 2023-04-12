@@ -81,8 +81,12 @@ void detachInterrupt(uint8_t rxGpio)
 	if (isReportSerial())
 		Serial.printf("close %s rxGpio:%d\n", Device.c_str() , rxGpio);
 // 	
-// 	fp = fopen(Device.c_str(), "w");
-// 	if (fp == NULL) {Serial.printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
+ 	fp = fopen(Device.c_str(), "w");
+ 	if (fp == NULL) {Serial.printf("[ERROR] open %s device not found - kernel driver must be started !!\n", Device.c_str());exit(1);}
+
+	int ret = setvbuf(fp, 0, _IONBF, 1024);
+ 	if (ret != 0 ) {Serial.printf("[ERROR] setvbuf  %s error %d\n", Device.c_str(),ret);exit(1);}
+
 
 }
 
@@ -144,6 +148,12 @@ static int DumpPulse = 0 ;
 
 static int rssiCumul   =0;
 static int rssiMin  =0;
+static int lastrssi=0;
+
+#define DISPLAYPULSEPERIODINMS  60000L
+
+char RssiValue[60*4];
+int  ctSec=0;
 
 void UpDatePulseCounter(int count )
 {
@@ -151,11 +161,11 @@ void UpDatePulseCounter(int count )
 
 	NbPulses += count;
 	CtMs += (SLEEP_TIME_IN_US/1000l);
-	if ((CtMs % 10000L) == 0)
+	if ((CtMs % DISPLAYPULSEPERIODINMS) == 0)
 	{
-		NbPulse = NbPulses / 10 ;
+		NbPulse = NbPulses / (DISPLAYPULSEPERIODINMS/1000L) ;
 		NbPulses = 0;
-//		Serial.printf( " NbPulse %d\n", NbPulse);
+//		if (isReportSerial()) 	Serial.printf( " NbPulse %d\n", NbPulse);
 		//fflush(stdout);
 		//			fprintf(stdout,"NbPulse %d\n", NbPulsePerSec);
 		//			easy->initPin();
@@ -172,7 +182,6 @@ void UpDatePulseCounter(int count )
     //chaque sec
 	if ((CtMs % 1000L) == 0)
 	{
-		static int lastrssi=0;
 		int rssi = radio.readRSSI();
 		if ( abs(lastrssi - rssi) > 2 )
 		{
@@ -180,6 +189,8 @@ void UpDatePulseCounter(int count )
 		}
 		lastrssi = rssi;
         rssiCumul += rssi;
+		sprintf(&RssiValue[ctSec*3],"%2d,",-rssi);
+		ctSec++;
 	}
     //chaque min
 	if ((CtMs % (1000L*60)) == 0)
@@ -189,19 +200,26 @@ void UpDatePulseCounter(int count )
 //			Serial.printf("rssi:%d NbPulse %d %d\n", rssiMin, NbPulse );
 		}
         rssiCumul = 0 ;
+		Serial.printf("RSSI      : %s\n", RssiValue );
+		ctSec=0;
 	}
 }
 
 int rssiGetAverage()
 {
 #ifdef RFM69_ENABLE
-      return (rssiMin);
+      return (lastrssi);
+//      return (rssiMin);
 #endif
 }
+
+#define LSIZE 4096
+char line[LSIZE];
 
 int ook_rpi_read_drv(int rxPin, int txPin , int ledpin, int reportType ,  int dumpPulse )
 {
     setReportType(reportType);
+//    Setup( rxPin,  txPin , ledpin,"OTIO;OOK;HAGER;HOMEEASY;MD230;RUBICSON;HIDEKI;RAIN;");
     Setup( rxPin,  txPin , ledpin,"OTIO;OOK;HAGER;HOMEEASY;MD230;RUBICSON;HIDEKI;RAIN;");
 
 	Serial.printf("running\n" );
@@ -211,16 +229,23 @@ int ook_rpi_read_drv(int rxPin, int txPin , int ledpin, int reportType ,  int du
 		UpDatePulseCounter(count);
 		if (count > 0)
 		{
+			int len=0;
 			for (int i = 0; i < count; i++)
 			{
                 if(DumpPulse) 
                 {
                     static int nbpulses = 0;
-                    Serial.printf("%d,", pulse[i]);
+//                    Serial.printf("%d,", pulse[i]);
+                    len += snprintf(&line[len],LSIZE-len-1,"%d,", pulse[i]);
                     if ((nbpulses++ % 32)==0)
-                        Serial.printf("\n" );
+//                        Serial.printf("\n" );
+                    len += snprintf(&line[len],LSIZE-len-1,"\n");
                 }
                 Loop(pulse[i] );
+			}
+            if(DumpPulse) {
+//	            Serial.printf("\n");
+	            Serial.printf(line );
 			}
 		}
         else
@@ -230,6 +255,27 @@ int ook_rpi_read_drv(int rxPin, int txPin , int ledpin, int reportType ,  int du
 	}
 	fclose(fp);
 	return 0;
+}
+
+#define U32B unsigned long
+void sendBuffer(word* transmitBuffer)
+{
+	U32B buf[256];
+	int i=0;
+	int sizeMessage=0;
+	int count;
+	while(transmitBuffer[i] != 0 )
+	{
+		buf[i]=transmitBuffer[i] ;
+		sizeMessage++;
+		i++;
+	}
+	for (i=0;i<5;i++)
+	{
+		count = fwrite(buf, sizeMessage*4,1, fp);
+		usleep(10*1000);//10 ms
+		Serial.printf("send %d:%d\n",sizeMessage,count);
+	}
 }
 
 int main(int argc , char** argv)

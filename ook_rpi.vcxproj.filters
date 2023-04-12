@@ -61,9 +61,6 @@
     <ClInclude Include="deftype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ookdecoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="oregon.h">
       <Filter>Header Files</Filter>
     </ClInclude>

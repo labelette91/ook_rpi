@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -91,7 +91,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;__attribute__(A);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Arduino\ook_rpi\DefPc;C:\Arduino\ook_rpi;c:\linux\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Arduino\ook_rpi\DefPc;C:\Arduino\ook_rpi;..\Arduino\Ook_OSV12;..\Arduino\libraries\DecodeHomeEasy;c:\linux\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,13 +153,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Arduino\Ook_OSV12\Oregon.cpp" />
     <ClCompile Include="..\Arduino\Ook_OSV12\reportSerial.cpp" />
     <ClCompile Include=".\gpio-freq\gpio-freq.c" />
     <ClCompile Include="..\Arduino\Ook_OSV12\Domotic.cpp" />
     <ClCompile Include="hager.cpp" />
     <ClCompile Include="HomeEasyTransmitter.cpp" />
     <ClCompile Include="ook_rpi.cpp" />
-    <ClCompile Include="Oregon.cpp" />
     <ClCompile Include="RFM69.cpp" />
     <ClCompile Include="rfmPrint.cpp" />
     <ClCompile Include="virtualserial.cpp" />
@@ -169,6 +169,24 @@
     <None Include="Makefile" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Arduino\Ook_OSV12\bitstream.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\bmp180.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\config.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\DecodeOOK.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\DecodePwm.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\DecodeRain.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\Domotic.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\fifo.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\hager.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\OOKDecoder.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\Oregon.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\Record.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\reportSerial.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\rubicson.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\SerialRfmCmd.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\tfaDecoder.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\types.h" />
+    <ClInclude Include="..\Arduino\Ook_OSV12\util.h" />
     <ClInclude Include="Arduino.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="decodeotio.h" />
@@ -176,8 +194,6 @@
     <ClInclude Include="domotic.h" />
     <ClInclude Include="hager.h" />
     <ClInclude Include="HomeEasyTransmitter.h" />
-    <ClInclude Include="ookdecoder.h" />
-    <ClInclude Include="oregon.h" />
     <ClInclude Include="print.h" />
     <ClInclude Include="reportserialascii.h" />
     <ClInclude Include="RFM69.h" />
