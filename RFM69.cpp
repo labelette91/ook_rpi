@@ -54,14 +54,16 @@ bool RFM69::initialize(byte freqBand, byte nodeID, byte networkID)
   {
     /* 0x01 */ { REG_OPMODE, RF_OPMODE_SEQUENCER_ON | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY },
     /* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00 }, //no shaping
-    /* 0x03 */ { REG_BITRATEMSB, RF_BITRATEMSB_4800}, //default:1024: nou used 
-    /* 0x04 */ { REG_BITRATELSB, RF_BITRATELSB_4800},
+    /* 0x03 */ { REG_BITRATEMSB, RF_BITRATEMSB_2400}, //default:1024: nou used 
+    /* 0x04 */ { REG_BITRATELSB, RF_BITRATELSB_2400},
+//    /* 0x03 */ { REG_BITRATEMSB, RF_BITRATEMSB_4800}, //default:1024: nou used 
+//    /* 0x04 */ { REG_BITRATELSB, RF_BITRATELSB_4800},
     /* 0x05 */ { REG_FDEVMSB, RF_FDEVMSB_50000}, //default:5khz, (FDEV + BitRate/2 <= 500Khz)
     /* 0x06 */ { REG_FDEVLSB, RF_FDEVLSB_50000}, //not used in OOPK
 
-    /* 0x07 */ { REG_FRFMSB, (freqBand==RF69_315MHZ ? RF_FRFMSB_315 : (freqBand==RF69_433MHZ ? RF_FRFMSB_433 : (freqBand==RF69_868MHZ ? RF_FRFMSB_868 : RF_FRFMSB_915))) },
-    /* 0x08 */ { REG_FRFMID, (freqBand==RF69_315MHZ ? RF_FRFMID_315 : (freqBand==RF69_433MHZ ? RF_FRFMID_433 : (freqBand==RF69_868MHZ ? RF_FRFMID_868 : RF_FRFMID_915))) },
-    /* 0x09 */ { REG_FRFLSB, (freqBand==RF69_315MHZ ? RF_FRFLSB_315 : (freqBand==RF69_433MHZ ? RF_FRFLSB_433 : (freqBand==RF69_868MHZ ? RF_FRFLSB_868 : RF_FRFLSB_915))) },
+    /* 0x07 */ { REG_FRFMSB, (byte)(freqBand==RF69_315MHZ ? RF_FRFMSB_315 : (freqBand==RF69_433MHZ ? RF_FRFMSB_433 : (freqBand==RF69_868MHZ ? RF_FRFMSB_868 : RF_FRFMSB_915))) },
+    /* 0x08 */ { REG_FRFMID, (byte)(freqBand==RF69_315MHZ ? RF_FRFMID_315 : (freqBand==RF69_433MHZ ? RF_FRFMID_433 : (freqBand==RF69_868MHZ ? RF_FRFMID_868 : RF_FRFMID_915))) },
+    /* 0x09 */ { REG_FRFLSB, (byte)(freqBand==RF69_315MHZ ? RF_FRFLSB_315 : (freqBand==RF69_433MHZ ? RF_FRFLSB_433 : (freqBand==RF69_868MHZ ? RF_FRFLSB_868 : RF_FRFLSB_915))) },
     
     // looks like PA1 and PA2 are not implemented on RFM69W, hence the max output power is 13dBm
     // +17dBm and +20dBm are possible on RFM69HW
@@ -71,8 +73,8 @@ bool RFM69::initialize(byte freqBand, byte nodeID, byte networkID)
     ///* 0x11 */ { REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | RF_PALEVEL_OUTPUTPOWER_11111},
     ///* 0x13 */ { REG_OCP, RF_OCP_ON | RF_OCP_TRIM_95 }, //over current protection (default is 95mA)
     
-    /* 0x18*/ { REG_LNA,  RF_LNA_ZIN_50   }, //gain Auto ADC + 50  Ohm //as suggested by mav here: http://lowpowerlab.com/forum/index.php/topic,296.msg1571.html
-//	/* 0x18*/ { REG_LNA,  RF_LNA_ZIN_200  }, //gain Auto ADC + 200 Ohm //as suggested by mav here: http://lowpowerlab.com/forum/index.php/topic,296.msg1571.html
+//    /* 0x18*/ { REG_LNA,  RF_LNA_ZIN_50   }, //gain Auto ADC + 50  Ohm //as suggested by mav here: http://lowpowerlab.com/forum/index.php/topic,296.msg1571.html
+	/* 0x18*/ { REG_LNA,  RF_LNA_ZIN_200  }, //gain Auto ADC + 200 Ohm //as suggested by mav here: http://lowpowerlab.com/forum/index.php/topic,296.msg1571.html
 
     // RXBW defaults are { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_5} (RxBw: 10.4khz)
     /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_20 | RF_RXBW_EXP_1 }, //(BitRate < 2 * RxBw)
@@ -95,9 +97,47 @@ bool RFM69::initialize(byte freqBand, byte nodeID, byte networkID)
 //    /* 0x3C */ { REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTART_FIFONOTEMPTY | RF_FIFOTHRESH_VALUE }, //TX on FIFO not empty
 //    /* 0x3d */ { REG_PACKETCONFIG2, RF_PACKET2_RXRESTARTDELAY_2BITS | RF_PACKET2_AUTORXRESTART_ON | RF_PACKET2_AES_OFF }, //RXRESTARTDELAY must match transmitter PA ramp-down time (bitrate dependent)
     /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
+      {0x58,0x2d},
     {255, 0}
   };
 
+  // RM1 / RM2 register configuration
+  // --------------------------------
+  const byte CONFIG2[][2] =
+  {
+    /* 0x01 */ { REG_OPMODE, RF_OPMODE_SEQUENCER_ON | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY },
+    /* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00 }, 
+    /* 0x03 */ { REG_BITRATEMSB, RF_BITRATEMSB_115200},   
+    /* 0x04 */ { REG_BITRATELSB, RF_BITRATELSB_115200},  
+    /* 0x07 */ { REG_FRFMSB, (byte)(freqBand==RF69_315MHZ ? RF_FRFMSB_315 : (freqBand==RF69_433MHZ ? RF_FRFMSB_433 : (freqBand==RF69_868MHZ ? RF_FRFMSB_868 : RF_FRFMSB_915))) },
+    /* 0x08 */ { REG_FRFMID, (byte)(freqBand==RF69_315MHZ ? RF_FRFMID_315 : (freqBand==RF69_433MHZ ? RF_FRFMID_433 : (freqBand==RF69_868MHZ ? RF_FRFMID_868 : RF_FRFMID_915))) },
+    /* 0x09 */ { REG_FRFLSB, (byte)(freqBand==RF69_315MHZ ? RF_FRFLSB_315 : (freqBand==RF69_433MHZ ? RF_FRFLSB_433 : (freqBand==RF69_868MHZ ? RF_FRFLSB_868 : RF_FRFLSB_915))) },
+    /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_16 | RF_RXBW_EXP_2 },  // 62.5  rx bandwidth
+    /* 0x1b */ { REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_FIXED}, // Selects type of threshold in the OOK data slicer: 00 -> fixed
+    /* 0x1d */ { REG_OOKFIX, 30},  // Fixed threshold value (in dB) in the OOK demodulator. Used when OokThresType = 00
+    /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 },  // Fading Margin Improvement, refer to 3.4.4;  required for RSSI !!!
+    /* 0x58 */ { REG_TESTLNA, 0x2D },   // == SENSITIVITY_BOOST_HIGH
+  {255, 0}
+  };
+
+   const byte CONFIG3[][2] =
+  {
+    /* 0x01 */ { REG_OPMODE, RF_OPMODE_SEQUENCER_OFF | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY },
+    /* 0x02 */ { REG_DATAMODUL, RF_DATAMODUL_DATAMODE_CONTINUOUSNOBSYNC | RF_DATAMODUL_MODULATIONTYPE_OOK | RF_DATAMODUL_MODULATIONSHAPING_00 }, // no shaping
+    /* 0x03 */ { REG_BITRATEMSB, 0x03}, // bitrate: 32768 Hz
+    /* 0x04 */ { REG_BITRATELSB, 0xD1},
+    /* 0x07 */ { REG_FRFMSB, (byte)(freqBand==RF69_315MHZ ? RF_FRFMSB_315 : (freqBand==RF69_433MHZ ? RF_FRFMSB_433 : (freqBand==RF69_868MHZ ? RF_FRFMSB_868 : RF_FRFMSB_915))) },
+    /* 0x08 */ { REG_FRFMID, (byte)(freqBand==RF69_315MHZ ? RF_FRFMID_315 : (freqBand==RF69_433MHZ ? RF_FRFMID_433 : (freqBand==RF69_868MHZ ? RF_FRFMID_868 : RF_FRFMID_915))) },
+    /* 0x09 */ { REG_FRFLSB, (byte)(freqBand==RF69_315MHZ ? RF_FRFLSB_315 : (freqBand==RF69_433MHZ ? RF_FRFLSB_433 : (freqBand==RF69_868MHZ ? RF_FRFLSB_868 : RF_FRFLSB_915))) },
+    /* 0x19 */ { REG_RXBW, RF_RXBW_DCCFREQ_010 | RF_RXBW_MANT_24 | RF_RXBW_EXP_4}, // BW: 10.4 kHz
+    /* 0x1B */ { REG_OOKPEAK, RF_OOKPEAK_THRESHTYPE_PEAK | RF_OOKPEAK_PEAKTHRESHSTEP_000 | RF_OOKPEAK_PEAKTHRESHDEC_000 },
+    /* 0x1D */ { REG_OOKFIX, 6 }, // Fixed threshold value (in dB) in the OOK demodulator
+    /* 0x29 */ { REG_RSSITHRESH, 100*2 }, // RSSI threshold in dBm = -(REG_RSSITHRESH / 2)
+    /* 0x6F */ { REG_TESTDAGC, RF_DAGC_IMPROVED_LOWBETA0 }, // run DAGC continuously in RX mode, recommended default for AfcLowBetaOn=0
+    {255, 0}
+  };
+
+    
   pinMode(_slaveSelectPin, OUTPUT);
   SPI.begin();
   

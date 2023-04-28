@@ -114,6 +114,7 @@
 #define REG_TESTPA1       0x5A //only present on RFM69HW/SX1231H
 #define REG_TESTPA2       0x5C //only present on RFM69HW/SX1231H
 #define REG_TESTDAGC      0x6F
+#define REG_TESTLNA		0x58
 
 //******************************************************
 // RF69/SX1231 bit control definition
