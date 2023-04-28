@@ -93,53 +93,62 @@ void detachInterrupt(uint8_t rxGpio)
 //#include "ook.ino"
 #include "../Arduino/Ook_OSV12/Ook_OSV12.ino"
 
-void readCom()
+byte RegList2 [] ={
+REG_OPMODE			    ,
+REG_DATAMODUL	  	  ,
+REG_BITRATEMSB		  ,
+REG_BITRATELSB		  ,
+REG_LNA			  	    ,
+REG_RXBW		    	  ,
+REG_OOKPEAK	  		  ,
+REG_OOKAVG  			  ,
+REG_OOKFIX	  		  ,
+REG_RSSICONFIG		  ,
+REG_RSSIVALUE		    ,
+REG_RSSITHRESH		  ,
+//REG_TESTPA1         ,
+//REG_TESTPA2         ,
+REG_TESTDAGC        ,
+0
+
+};
+
+void readCom(char cmd , char* reg , char* val )
 {
-	char reg[10];
-	char val[10];
 	int Reg, Val;
 
-	byte nbCar = Serial.available();
-	while (nbCar != 0)
+	if (cmd == 'w')
 	{
-		{
-			byte b = Serial.Read();
-			if (b == 'W')
-			{
-				reg[0] = Serial.Read();
-				reg[1] = Serial.Read();
-				reg[2] = 0;
-				val[0] = Serial.Read();
-				val[1] = Serial.Read();
-				val[2] = Serial.Read();
+		sscanf(reg, "%x", &Reg);
+		if(val[0]=='x')
+			sscanf(&val[1], "%x", &Val);
+		else
+			sscanf(&val[0], "%d", &Val);
 
-				sscanf(reg, "%x", &Reg);
-				sscanf(val, "%x", &Val);
+		Serial.printf("write %d : %d\n",Reg,Val);
 
-				Serial.printf("write %d : %d\n",Reg,Val);
+//		readListRegs(RegList2);
+		radio.writeReg(Reg, Val);
+		PrintReg(Reg);
+	}
+	if (cmd == 'r')
+	{
+		sscanf(reg, "%x", &Reg);
+		PrintReg(Reg);
+	}
+	if (cmd == 's')
+	{
 
-				readListRegs(RegList);
-				radio.writeReg(Reg, Val);
-				PrintReg(Reg);
-
-
-			}
-			if (b == 'R')
-			{
-				reg[0] = Serial.Read();
-				reg[1] = Serial.Read();
-				reg[2] = 0;
-
-				sscanf(reg, "%x", &Reg);
-				PrintReg(Reg);
-
-
-			}
-
-
-			nbCar--;
-
-		}
+		Serial.printf("reset\n");
+	    radio.setMode(RF69_MODE_STANDBY);
+        delay(10);
+        radio.setMode(RF69_MODE_RX);
+        delay(10);
+        radio.writeReg(REG_PACKETCONFIG2,RF_PACKET2_RXRESTART);
+	}
+	if (cmd == 'l')
+	{
+		readListRegs(RegList2);
 	}
 }
 
@@ -179,36 +188,37 @@ void UpDatePulseCounter(int count )
         }
 */
 	}
-    //chaque sec
-	if ((CtMs % 1000L) == 0)
-	{
-		int rssi = radio.readRSSI();
-		if ( abs(lastrssi - rssi) > 2 )
-		{
-//			Serial.printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);
-		}
-		lastrssi = rssi;
-        rssiCumul += rssi;
-		sprintf(&RssiValue[ctSec*3],"%2d,",-rssi);
-		ctSec++;
-	}
-    //chaque min
-	if ((CtMs % (1000L*60)) == 0)
-	{
-        rssiMin = rssiCumul / 60 ;
-		{
-//			Serial.printf("rssi:%d NbPulse %d %d\n", rssiMin, NbPulse );
-		}
-        rssiCumul = 0 ;
-		Serial.printf("RSSI      : %s\n", RssiValue );
-		ctSec=0;
-	}
+//    //chaque sec
+//	if ((CtMs % 1000L) == 0)
+//	{
+//		int rssi = radio.readRSSI();
+//		if ( abs(lastrssi - rssi) > 2 )
+//		{
+////			Serial.printf("rssi:%d NbPulse %d %d\n", rssi, NbPulse,NbPulses);
+//		}
+//		lastrssi = rssi;
+//        rssiCumul += rssi;
+//		sprintf(&RssiValue[ctSec*3],"%2d",rssi);
+//		ctSec++;
+//	}
+//    //chaque min
+//	if ((CtMs % (1000L*60)) == 0)
+//	{
+//        rssiMin = rssiCumul / 60 ;
+//		{
+////			Serial.printf("rssi:%d NbPulse %d %d\n", rssiMin, NbPulse );
+//		}
+//        rssiCumul = 0 ;
+//		Serial.printf("RSSI      :%d= %s,\n",NbPulse, RssiValue );
+//		ctSec=0;
+//	}
 }
 
 int rssiGetAverage()
 {
 #ifdef RFM69_ENABLE
-      return (lastrssi);
+		return radio.readRSSI();
+//      return (lastrssi);
 //      return (rssiMin);
 #endif
 }
@@ -216,11 +226,32 @@ int rssiGetAverage()
 #define LSIZE 4096
 char line[LSIZE];
 
+#include <fcntl.h>
+void readCons()
+{
+	char buf[20];
+    fcntl(fileno(stdin), F_SETFL, fcntl(0, F_GETFL) | O_NONBLOCK);
+    int numRead = read(fileno(stdin), buf, 10);
+    if (numRead > 0) {
+		buf[numRead]=0;
+//        printf("You said: %s", buf);
+		char reg[10];
+		char val[10];
+		reg[0] = buf[1];
+		reg[1] = buf[2];
+		reg[2] = 0;
+
+		strncpy(val , &buf[3],9 );
+
+		readCom( buf[0] , reg ,  val );
+    }
+}
 int ook_rpi_read_drv(int rxPin, int txPin , int ledpin, int reportType ,  int dumpPulse )
 {
     setReportType(reportType);
 //    Setup( rxPin,  txPin , ledpin,"OTIO;OOK;HAGER;HOMEEASY;MD230;RUBICSON;HIDEKI;RAIN;");
     Setup( rxPin,  txPin , ledpin,"OTIO;OOK;HAGER;HOMEEASY;MD230;RUBICSON;HIDEKI;RAIN;");
+//    Setup( rxPin,  txPin , ledpin,"OOK;");
 
 	Serial.printf("running\n" );
 	while (1) {
@@ -252,6 +283,7 @@ int ook_rpi_read_drv(int rxPin, int txPin , int ledpin, int reportType ,  int du
             Loop(0 );
 
 		usleep(SLEEP_TIME_IN_US);
+		readCons();
 	}
 	fclose(fp);
 	return 0;
@@ -263,19 +295,21 @@ void sendBuffer(word* transmitBuffer)
 	U32B buf[256];
 	int i=0;
 	int sizeMessage=0;
-	int count;
+	int count=0;
 	while(transmitBuffer[i] != 0 )
 	{
 		buf[i]=transmitBuffer[i] ;
 		sizeMessage++;
 		i++;
 	}
+//	Serial.printf("send %d:%d\n",sizeMessage,count);
 	for (i=0;i<5;i++)
 	{
 		count = fwrite(buf, sizeMessage*4,1, fp);
 		usleep(10*1000);//10 ms
-		Serial.printf("send %d:%d\n",sizeMessage,count);
+//		Serial.printf("send %d:%d\n",sizeMessage,count);
 	}
+	Serial.printf("send %d:%d\n",sizeMessage,count);
 }
 
 int main(int argc , char** argv)
